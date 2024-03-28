@@ -7,7 +7,7 @@ from Bio import SeqIO
 
 
 def main(pep_align: str, nucleotide: str, outBase: str)-> None:
-    pass
+    print("to implement")
 
 
 parser = argparse.ArgumentParser(description='The script check that the nucleotide unaligned file correspsond to the aligned peptide file')
