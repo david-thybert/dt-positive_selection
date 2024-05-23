@@ -62,6 +62,7 @@ def readOrthologyFile(orthologues: str) -> dict:
 def createPepFile(orthogroup_path: str, orthogroup: str, peptide: str, orthodata: dict) -> list :
     '''
     This method group all peptide sequences from each orthogroup into one file per orthogroup. 
+    {horthologous group: {species:[transcriptid,'','']}}.
 
     :param orthogroup_path: basal path where the orthogroup files will be stored
     :param orthogroup: name of the orthogroup
@@ -101,6 +102,7 @@ def createNucFile(orthogroup_path: str, orthogroup: str, nucleotide: str, orthod
     fasta_list = []
     for species, genes in orthodata.items():
         species_sequences = f"{nucleotide}/{species}/{species}.cds.fasta"
+        print(species_sequences)
         record_dict = SeqIO.to_dict(SeqIO.parse(species_sequences, "fasta"))
         try:
             record = record_dict[genes[0]]
@@ -119,6 +121,13 @@ def createNucFile(orthogroup_path: str, orthogroup: str, nucleotide: str, orthod
     return fasta_list
 
 def check_consistancy(lst_pep_fasta, lst_nuc_fasta) -> bool:
+    """
+     This method check that CDNA and pep sequence corresponde
+
+     :param lst_pep_fasta: list fo peptide sequence
+     :param lst_nuc_fasta: list of nucleotide sequences
+     :return: True if all nuc sequence correpsont to the peptide equivalent False otherwise 
+    """
     for nuc in lst_nuc_fasta:
         found = False
         if len(nuc) %3 != 0:
@@ -164,7 +173,6 @@ def main(orthologues: str, nucleotide: str, peptides: str, outBase: str) -> None
         fasta_nuc = createNucFile(outBase, ortho, nucleotide, lst_genes)
         if check_consistancy(fasta_pep, fasta_nuc):
             nuc_file = f"{outBase}/{ortho}.nuc.fasta"
-            print(nuc_file)
             with open(nuc_file, "w") as output_handle:
                 SeqIO.write(fasta_nuc, output_handle, "fasta")
         else:
