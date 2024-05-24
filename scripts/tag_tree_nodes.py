@@ -57,7 +57,7 @@ def tag_tree(tree:Tree, species_to_tag:list, tag_name:str, anc:bool)->Tree:
                 species_with_node.append(species)
                 break
 
-    if anc:# if we want to tag all ancestors until lca
+    if anc and len(species_with_node) > 1:# if we want to tag all ancestors until lca we should have more than 1 species
         lca_node = leaf_nodes[0].get_common_ancestor(leaf_nodes[1:])
         for node in leaf_nodes:
             tag_ancestors(node, lca_node, tag_name)
