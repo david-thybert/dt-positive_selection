@@ -77,8 +77,8 @@ def createPepFile(orthogroup_path: str, orthogroup: str, peptide: str, orthodata
         for record in seq_records:
             if _getTranscripr_id(record.description) == genes[0]:
                 description  = f"species:{species} transcript:{genes[0]} ortho:{orthogroup}"
-                record.id = genes[0]
-                record.description = description
+                record.id = f"{genes[0]}|{species}"
+                record.description = ""#species #""#description
                 fasta_list.append(record)
     
     #pep_file = f"{orthogroup_path}/{orthogroup}.pep.fasta"
@@ -107,8 +107,8 @@ def createNucFile(orthogroup_path: str, orthogroup: str, nucleotide: str, orthod
         try:
             record = record_dict[genes[0]]
             description  = f"species:{species} transcript:{genes[0]} ortho:{orthogroup}"
-            record.id = genes[0]
-            record.description = description
+            record.id = f"{genes[0]}|{species}"
+            record.description = ""#species#description
             fasta_list.append(record)
         except KeyError as err:
             print(f"{genes[0]} absent from the fasta file : {err}")
@@ -176,7 +176,7 @@ def main(orthologues: str, nucleotide: str, peptides: str, outBase: str) -> None
             with open(nuc_file, "w") as output_handle:
                 SeqIO.write(fasta_nuc, output_handle, "fasta")
         else:
-            print(f"issue in the orthogroup {ortho}: the nuceotide file does correpsondant to pep file")    
+            print(f"issue in the orthogroup {ortho}: the nuceotide file does not correpsondant to pep file")    
 
 
 ########################################################################################

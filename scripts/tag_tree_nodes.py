@@ -14,25 +14,6 @@ def load_species_to_tag(species_tag:str)->list:
             results.append(line.strip())
     return results
 
-
-def get_species_in_tree(tree:Tree, species_list:list)->list:
-    """
-    Since the list of species to tag is defined globaly and the positive selection 
-    analysis works at the gene tree level, some orthogroup may lack the species 
-    list to tag. This function eep only the species that are present in the tree.
-
-    :param tree: phylogenetic tree object  
-    :param species_list: list fo species to check their presence in the tree object. 
-    :return: list of species present in the tree
-    """
-    species_in_tree = []
-    for species in species_list:
-        nodes = tree.get_leaves_by_name(species)
-        if len(nodes) > 0:
-            species_in_tree.append(species)
-    return species_in_tree
-
-
 def tag_ancestors(node:Tree, lca:Tree, tag:str)->Tree:
     """
     Tag all the path from the node to the last common ancestor.
@@ -64,18 +45,19 @@ def tag_tree(tree:Tree, species_to_tag:list, tag_name:str, anc:bool)->Tree:
 
     :param tree: the tree containing the tags.
     :param species_to_tag: list of species to tag
-    :param tag_name: the anme of the tag in the form of "{name}"
+    :param tag_name: the string corresponding to the tag"
     :param anc: True tag the ancestor and LCA , False tag just the leafs.
     """
-    
-    species_to_tag_in_tree = get_species_in_tree(tree, species_to_tag)
-
     leaf_nodes = []
-    for species in species_to_tag_in_tree:
-        leafs = tree.get_leaves_by_name(species)
-        leaf_nodes.append(leafs[0])
-    
-    if anc:# if we want to tag all ancestro until lca
+    species_with_node = []
+    for species in species_to_tag:
+        for leaf in tree:
+            if species == leaf.name.split("|")[-1]:
+                leaf_nodes.append(leaf)
+                species_with_node.append(species)
+                break
+
+    if anc:# if we want to tag all ancestors until lca
         lca_node = leaf_nodes[0].get_common_ancestor(leaf_nodes[1:])
         for node in leaf_nodes:
             tag_ancestors(node, lca_node, tag_name)
@@ -84,9 +66,6 @@ def tag_tree(tree:Tree, species_to_tag:list, tag_name:str, anc:bool)->Tree:
             new_name = node.name + tag_name
             node.add_feature("name", new_name)
     return tree
-
-
-
 
 def main(tree_file:str, species_tag:str, tag_name:str, anc:bool, out_file:str)->None:
     """

@@ -6,6 +6,8 @@ params.pep = "$projectDir/data/pep/"
 params.out = "$projectDir/out/"
 params.prank_command = "$projectDir/ext/prank-msa/prank"
 params.raxml_command = "$projectDir/ext/raxml/raxml-ng"
+params.fgrd_species = "$projectDir/data/foreground.txt"
+params.ancestral = "False"
 
 
 log.info"""\
@@ -45,7 +47,7 @@ process FormatFasta{
         path ortho
         val nucleotides
         val peptides
-        
+
     output:
         path "*.nuc.fasta" , emit: ortho_nuc
     script:
@@ -146,6 +148,7 @@ process Check_align_and_trees{
     
     output:
          path  "pair_align_tree.txt", emit: pair_align_tree
+   
     script:
         """
             python $projectDir/scripts/check_align_and_trees.py  --ff_deg "$align" --trees "$trees" --base_dir ${params.out} --out pair_align_tree.txt
@@ -153,6 +156,30 @@ process Check_align_and_trees{
 }
 
 
+process TagForgroundInTree{
+/*This process tag all species belonging to the forground set
+  in each phylogenetic trees.
+
+  input:
+  path tree: the phylogenetic tree
+  path foreground: the file describing the forground species(one species per line)
+  output:
+  path tagged_tree: tree tagged with the forground
+*/
+    publishDir params.out, mode: 'copy'
+
+    input:
+        path tree
+        //path foreground
+    output:
+        path "*.bestTree.tagged", emit: tagged_tree
+
+    script:
+    """
+        python $projectDir/scripts/tag_tree_nodes.py --tree $tree --spe_tag $params.fgrd_species --out ${tree}.tagged --tag {fgrd} --ancestral $params.ancestral
+    """
+
+}
 process PositiveSelectionABSREL{
 /* this process rune the positive selction analysis using 
    the aBSREL model.
@@ -171,15 +198,12 @@ process PositiveSelectionABSREL{
     output:
         path  "*.ABSREL.json", emit: pos_sel
 
-    script:
+    script://{fgrd}
     """
-       hyphy aBSREL --alignment $params.out/$align  --tree $params.out/$tree --output ${align}.ABSREL.json
+       hyphy aBSREL --alignment $params.out/$align  --tree $params.out/$tree --branches fgrd --output ${align}.ABSREL.json
     """
     
 }
-
-
-
 
 nextflow.enable.dsl=2
 
@@ -191,11 +215,14 @@ workflow{
     // build tree based on four fold degenrate sites
     four_four_deg_ch = ExtractFourFoldDegeSites(align_nuc_ch.flatten())
     tree_ch = RaxmlPhylogeny(four_four_deg_ch.flatten())
+    // tag trees with foreground tag
+    //foreground_ch = channel.fromPath(params.fgrd_species)
+    tree_tagged_ch = TagForgroundInTree(tree_ch.flatten())
     
     // wait that all  alignment and trees are finished 
     // and keep only alignemnt with a correpssondant tree
     lst_align_nuc_ch = align_nuc_ch.collect(sort: true)
-    lst_tree_ch = tree_ch.collect(sort:true)
+    lst_tree_ch = tree_tagged_ch.collect(sort:true)
     pair_align_tree_file_ch = Check_align_and_trees(lst_align_nuc_ch, lst_tree_ch)
     
     //
