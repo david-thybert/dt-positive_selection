@@ -205,6 +205,28 @@ process PositiveSelectionABSREL{
     
 }
 
+process Combine_possel_info{
+/* this process combine all the json file produced by
+   Hyphy aBSREL model.
+
+   input:
+   path pos_sel_json: the list of posel json file from ANSREL model  to be combined 
+   output:
+   path pos_sel: path to the csv combining and multitest correcting the output of possel
+*/
+    publishDir params.out, mode: 'copy'
+
+    input:
+        path pos_sel_json
+    output:
+        path "*.possel", emit: pos_sel
+
+    script:
+    """
+         python $projectDir/scripts/combine_pos_sell_info.py --files "$pos_sel_json" --prefix_out "aBSREL"
+    """
+}
+
 nextflow.enable.dsl=2
 
 workflow{
@@ -228,4 +250,7 @@ workflow{
     //
     pair_align_tree_ch = pair_align_tree_file_ch.splitCsv(sep:"\t")
     pos_sel_res_ch  = PositiveSelectionABSREL(pair_align_tree_ch)
+
+    pos_sel_comb_ch = Combine_possel_info(pos_sel_res_ch.collect())
+
 }
