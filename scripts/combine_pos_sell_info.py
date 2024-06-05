@@ -5,13 +5,37 @@ import statsmodels.stats.multitest as ssm
 
 #from statsmodels import stats
 
-def fetch_pos_sel_info(json_file:str)->dict:
+def map_inputs(jsons:list, sat_substs:list)-> dict:
+    """
+    This function map together json file and saturation of substitution file
+
+    :param jsons: list of json fles
+    :param sat_substs: list of saturaiton of substitution files
+    :return: Dictionary that map json file tot he corresponding saturations substtitution file
+    """
+    dico_result = {}
+    for json in jsons:
+        id_json = json.split("/")[-1].split(".ABSREL")[0]
+        for sta_subst in sat_substs:
+            id_sta_subst = sta_subst.split("/")[-1].split(".nuc")[0]
+            if id_json == id_sta_subst:
+                dico_result[id_json] = [json, sta_subst]
+    return dico_result
+
+def fetch_pos_sel_info(gene_id:str, json_file:str, sat_subst:str)->dict:
     """
     Retrieve the positive selction information fomr the json file
 
     :param json_file: JSON file from positive selction analysis
     :return: dictionary of results
     """
+    lst_val = []
+    with open(sat_subst) as sat_subst_handler:
+        for line in sat_subst_handler:
+            if "exp_entrop" in line:
+                continue
+            lst_val = line.split()
+            break
 
     with open(json_file) as json_handler:
         file_contents = json_handler.read()
@@ -19,7 +43,7 @@ def fetch_pos_sel_info(json_file:str)->dict:
     parsed_json = json.loads(file_contents)
 
     # gee if is contained in the file name
-    gene_id = json_file.split("/")[-1].split(".nuc")[0]
+    #gene_id = json_file.split("/")[-1].split(".nuc")[0]
     result = {}
     for (branch,values) in parsed_json["branch attributes"]['0'].items():
         if not "original name" in values:
@@ -32,7 +56,7 @@ def fetch_pos_sel_info(json_file:str)->dict:
         omega_ratio_base = values['Baseline MG94xREV omega ratio']
         base = values['Baseline MG94xREV']
         if not pval is None:
-            result[species_name] = [gene_id, lrt, pval, pval_corr, rate_class, omega_ratio_base, base]
+            result[species_name] = [gene_id, lrt, pval, pval_corr, rate_class, omega_ratio_base, base, float(lst_val[-1]), float(lst_val[1]), float(lst_val[0])]
     return result
 
 def _create_data_frame(pos_sel_branches:dict)->dict:
@@ -46,7 +70,7 @@ def _create_data_frame(pos_sel_branches:dict)->dict:
     result = {}
     for branche, pos_val in pos_sel_branches.items():
         df = pd.DataFrame(pos_val,  columns =  ["gene_id", "lrt", "pval", "pval_corr", 
-                                                "rate_class", "omega_ratio_base", "base"])
+                                                "rate_class", "omega_ratio_base", "base", "Pval_no_sat", "obs_entropy", "exp_entropy"])
         result[branche] = df
     return result
 
@@ -66,17 +90,24 @@ def multitetesting_correction(pos_sel_branches_df:dict, method:str="fdr_bh")->di
         values_df["pval_adj"] = pval_adj
     return pos_sel_branches_df
 
-def main(files:str, pref_out:str)->None:
+def main(files:str, file_sat_subst:str, pref_out:str)->None:
     """
     The main fucntion of the script
 
     :param files: string that list all json files to be parsed separated by a white space
+    :param file_sat_subst: the list fo file with substitution saturaiton info
     :param pref_out: prefix used for the file name
     """
-    lst_jsons = files.split()
+    jsons = files.split()
+    subst_sats = file_sat_subst.split()
+
+    dico_input = map_inputs(jsons, subst_sats)
+
     pos_sel_branches = {}
-    for json in lst_jsons:
-        pos_sel = fetch_pos_sel_info(json)
+    for id, files in dico_input.items():
+        json = files[0]
+        sat_subst = files[1]
+        pos_sel = fetch_pos_sel_info(id, json, sat_subst)
         for (species, val) in pos_sel.items():
             if not species in pos_sel_branches:
                 pos_sel_branches[species] = []
@@ -99,9 +130,10 @@ def main(files:str, pref_out:str)->None:
 ########################################################################################
 
 parser = argparse.ArgumentParser(description='Script formating the data to be handle by the positvie selction pipeline')
-parser.add_argument('--files',type=str, help='list of json file to integrate')
+parser.add_argument('--files_possel',type=str, help='list of json file to integrate')
+parser.add_argument('--files_sat_subst',type=str, help='list of files for saturation_substitution')
 parser.add_argument('--prefix_out', type=str, help='prefix for outfiles')
 args = parser.parse_args()
 
-main(args.files, args.prefix_out)
+main(args.files_possel, args.files_sat_subst, args.prefix_out)
 

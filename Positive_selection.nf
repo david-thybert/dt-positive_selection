@@ -5,17 +5,34 @@ params.nuc = "$projectDir/data/nuc/"
 params.pep = "$projectDir/data/pep/"
 params.out = "$projectDir/out/"
 params.prank_command = "$projectDir/ext/prank-msa/prank"
+params.mafft_comand = "$projectDir/ext/mafft-mac/mafft.bat"
+params.zorro_command = "$projectDir/ext/zorro-master/bin/zorro"
+params.fasttree_command = "$projectDir/ext/zorro-master/bin/FastTree" 
+params.zorro_thr = "5.0"
+params.pal2nal = "$projectDir/ext/pal2nal.v14/pal2nal.pl"
 params.raxml_command = "$projectDir/ext/raxml/raxml-ng"
 params.fgrd_species = "$projectDir/data/foreground.txt"
 params.ancestral = "False"
 
 
+
 log.info"""\
 
-    =======================================================
-        POSSEL : A POSITIVE SELECTiON ANALYSIS PIPELINE
-    =======================================================
-
+    =================================================================
+    |                                                               |
+    |    *****      *****      ******    ******   ******   *        |
+    |    *    *   *       *   *         *         *        *        |
+    |    *    *  *         *  *         *         *        *        |
+    |    *****   *         *   ******    ******   ******   *        |
+    |    *       *         *         *         *  *        *        |
+    |    *        *       *          *         *  *        *        |
+    |    *          *****      ******     *****   ******   ******   |
+    |                                                               |
+    |                                                               |
+    |              A POSITIVE SELECTION ANALYSIS PIPELINE           |
+    |                                                               |
+    =================================================================
+                   
     Parameters: 
     ortho: $params.ortho
     nuc: $params.nuc
@@ -39,7 +56,8 @@ process FormatFasta{
    val peptides: directory where to find the peptide based sequeces
 
    output:
-   path ortho_nuc: fasta file formated for positive selection
+   path ortho_nuc: nucleotide fasta file formated per orthogroup
+   path ortho_pep: peptide fasta file formated per orthogroup
    */
     publishDir params.out, mode: 'copy'
 
@@ -50,6 +68,7 @@ process FormatFasta{
 
     output:
         path "*.nuc.fasta" , emit: ortho_nuc
+        path "*.pep.fasta" , emit: ortho_pep
     script:
     """
         python $projectDir/scripts/format_fasta.py --ortho $ortho --nuc $nucleotides --pep $peptides --out ./
@@ -72,16 +91,66 @@ process AlignSequence{
     publishDir params.out, mode: 'copy'
 
     input:
-        path ortho_nuc
+        path ortho_pep
 
     output:
-        path "*.nuc.fasta.best.fas", emit: align_seq
+        path "*.ali", emit: aligned_pep
 
     script:
     """
-        $params.prank_command  -d=$ortho_nuc -o=$ortho_nuc -codon -F
+     $params.mafft_comand --amino --localpair $ortho_pep > ${ortho_pep}.ali
     """
+    //$params.prank_command  -d=$ortho_nuc -o=$ortho_nuc -codon -F
 }
+
+
+process FilterNonConfidentColumns{
+/*This process filter non confident column using zorro
+
+  input:
+  path align_seq: path to the alignment file
+  output:
+  path align_filt: path to the filterted alignment
+  path reg_filt: path to th efile describing the filtered regions
+*/
+    publishDir params.out, mode: 'copy'
+
+    input:
+        path align_seq
+
+    output:
+        path "*.filt.fa", emit: align_filt
+        path "*.conf_reg", emit : reg_filt
+    
+    script:
+    """
+        python $projectDir/scripts/zorro_wrapper.py --mult $align_seq --zorro $params.zorro_command --tree_cmd $params.fasttree_command --out ${align_seq}.filt.fa --threshold $params.zorro_thr
+    """
+
+}
+
+process PepAli_2_DNAAli{
+/*This process convert a peptide multiple sequence alignemnt into a DNA multiple sequence alignemnt
+  input:
+  val pair_pepali_nuc : mapping betwen id, path to pep align, path to nuc file [id, pep_al, nuc_file]
+  output:
+  path align_nuc : path to the aligned nucleotide sequences
+*/
+    publishDir params.out, mode: 'copy'
+
+    input:
+        val pair_pepali_nuc
+
+    output:
+        path "*.nuc.ali.fasta", emit: align_nuc
+    
+    script:
+    """
+        perl $params.pal2nal -output fasta ${pair_pepali_nuc[1]} ${pair_pepali_nuc[2]} > ./${pair_pepali_nuc[0]}.nuc.ali.fasta
+    """
+
+}
+
 
 process ExtractFourFoldDegeSites{
 /*This process extract the four fold degenrated site form consrevd amino acid across 
@@ -180,12 +249,31 @@ process TagForgroundInTree{
     """
 
 }
+process TestSaturation{
+/*this process test whether a gene multiple alignemnt reached a substitution saturation
+   input:
+   path align_nuc_filt: path of the multiple DNA sequence aligment 
+   output:
+   path saturation_info: path the information reltive to saturation
+*/
+    publishDir params.out, mode: 'copy'
+    input:
+        path align_nuc_filt
+    output:
+        path "*.sat", emit: saturation_info
+    script:
+    """
+        python $projectDir/scripts/test_saturation_substitution.py --mult $align_nuc_filt --out ${align_nuc_filt}.sat
+    """
+
+}
+
 process PositiveSelectionABSREL{
 /* this process rune the positive selction analysis using 
    the aBSREL model.
 
    input:
-   tuple val(align), val(tree): align is the path to the alignment file and tree the path tot he correspding tree file
+   val pair_nuc_tree_ch: mapping betwen id, path to dna align, path tree [id, DNA_al, tree]
    output:
    path pos_sel: path to the json file storing positive selection results.
 */
@@ -193,14 +281,14 @@ process PositiveSelectionABSREL{
     publishDir params.out, mode: 'copy'
 
     input:
-        tuple val(align), val(tree)
+         val pair_nuc_tree_ch
 
     output:
         path  "*.ABSREL.json", emit: pos_sel
 
     script://{fgrd}
     """
-       hyphy aBSREL --alignment $params.out/$align  --tree $params.out/$tree --branches fgrd --output ${align}.ABSREL.json
+       hyphy aBSREL --alignment ${pair_nuc_tree_ch[1]} --tree ${pair_nuc_tree_ch[2]} --branches fgrd --output ./${pair_nuc_tree_ch[0]}.ABSREL.json
     """
     
 }
@@ -210,7 +298,8 @@ process Combine_possel_info{
    Hyphy aBSREL model.
 
    input:
-   path pos_sel_json: the list of posel json file from ANSREL model  to be combined 
+   path pos_sel_json: the list of hyphy json file from ABSREL model  to be combined 
+   path sat_subst : the list of file with substitution saturation annotation
    output:
    path pos_sel: path to the csv combining and multitest correcting the output of possel
 */
@@ -218,12 +307,13 @@ process Combine_possel_info{
 
     input:
         path pos_sel_json
+        path sat_subst
     output:
         path "*.possel", emit: pos_sel
 
     script:
     """
-         python $projectDir/scripts/combine_pos_sell_info.py --files "$pos_sel_json" --prefix_out "aBSREL"
+         python $projectDir/scripts/combine_pos_sell_info.py --files_possel "$pos_sel_json" --files_sat_subst "$sat_subst" --prefix_out "aBSREL"
     """
 }
 
@@ -232,25 +322,43 @@ nextflow.enable.dsl=2
 workflow{
 
     ortho_dir = FormatFasta(params.ortho, params.nuc, params.pep)
-    align_nuc_ch = AlignSequence(ortho_dir.ortho_nuc.flatten())
+    
+    // Align protein sequences
+    align_pep_ch = AlignSequence(ortho_dir.ortho_pep.flatten())
+    
+    /////////// Filtering non informative steps //////////////
+    // remove non confident alignment 
+    align_pep_filt = FilterNonConfidentColumns(align_pep_ch)
+
+    // combine two chanel to be used later
+    ortho_dir_nuc_id = ortho_dir.ortho_nuc.flatten().map { [it.toString().split("/")[-1].split(".nuc")[0], it]}
+    align_pep_filt_id = align_pep_filt.align_filt.map { [it.toString().split("/")[-1].split(".pep")[0], it]}
+    pair_pepal_nuc_ch = align_pep_filt_id.combine(ortho_dir_nuc_id, by: 0)
+
+    //convert prot alignemnt in DNA alignemnt
+    nuc_ali_filt = PepAli_2_DNAAli(pair_pepal_nuc_ch)
     
     // build tree based on four fold degenrate sites
-    four_four_deg_ch = ExtractFourFoldDegeSites(align_nuc_ch.flatten())
+    four_four_deg_ch = ExtractFourFoldDegeSites(nuc_ali_filt.flatten())
     tree_ch = RaxmlPhylogeny(four_four_deg_ch.flatten())
+
     // tag trees with foreground tag
     //foreground_ch = channel.fromPath(params.fgrd_species)
     tree_tagged_ch = TagForgroundInTree(tree_ch.flatten())
     
-    // wait that all  alignment and trees are finished 
-    // and keep only alignemnt with a correpssondant tree
-    lst_align_nuc_ch = align_nuc_ch.collect(sort: true)
-    lst_tree_ch = tree_tagged_ch.collect(sort:true)
-    pair_align_tree_file_ch = Check_align_and_trees(lst_align_nuc_ch, lst_tree_ch)
-    
-    //
-    pair_align_tree_ch = pair_align_tree_file_ch.splitCsv(sep:"\t")
-    pos_sel_res_ch  = PositiveSelectionABSREL(pair_align_tree_ch)
+    // test for saturation
+    sat_info_ch = TestSaturation(nuc_ali_filt.flatten())
 
-    pos_sel_comb_ch = Combine_possel_info(pos_sel_res_ch.collect())
+    // combining 
+    tree_tagged_id_ch = tree_tagged_ch.flatten().map { [it.toString().split("/")[-1].split(".nuc")[0], it]}
+    nuc_ali_filt_id_ch = nuc_ali_filt.flatten().map { [it.toString().split("/")[-1].split(".nuc")[0], it]}
+    pair_nuc_tree_ch = nuc_ali_filt_id_ch.combine(tree_tagged_id_ch, by: 0)
+    //pair_nuc_tree_ch.view()
+
+    // positive selection
+    pos_sel_res_ch  = PositiveSelectionABSREL(pair_nuc_tree_ch)
+    
+    // combine result and multiple test correciton
+    pos_sel_comb_ch = Combine_possel_info(pos_sel_res_ch.collect(), sat_info_ch.collect())
 
 }

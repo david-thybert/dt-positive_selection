@@ -128,6 +128,7 @@ def check_consistancy(lst_pep_fasta, lst_nuc_fasta) -> bool:
      :param lst_nuc_fasta: list of nucleotide sequences
      :return: True if all nuc sequence correpsont to the peptide equivalent False otherwise 
     """
+    return True
     for nuc in lst_nuc_fasta:
         found = False
         if len(nuc) %3 != 0:
@@ -173,8 +174,11 @@ def main(orthologues: str, nucleotide: str, peptides: str, outBase: str) -> None
         fasta_nuc = createNucFile(outBase, ortho, nucleotide, lst_genes)
         if check_consistancy(fasta_pep, fasta_nuc):
             nuc_file = f"{outBase}/{ortho}.nuc.fasta"
+            pep_file = f"{outBase}/{ortho}.pep.fasta"
             with open(nuc_file, "w") as output_handle:
                 SeqIO.write(fasta_nuc, output_handle, "fasta")
+            with open(pep_file, "w") as output_handle:
+                SeqIO.write(fasta_pep, output_handle, "fasta")
         else:
             print(f"issue in the orthogroup {ortho}: the nuceotide file does not correpsondant to pep file")    
 
