@@ -347,7 +347,7 @@ workflow{
     tree_tagged_ch = TagForgroundInTree(tree_ch.flatten())
     
     // test for saturation
-    sat_info_ch = TestSaturation(nuc_ali_filt.flatten())
+    sat_info_ch = TestSaturation(four_four_deg_ch.flatten())
 
     // combining 
     tree_tagged_id_ch = tree_tagged_ch.flatten().map { [it.toString().split("/")[-1].split(".nuc")[0], it]}
