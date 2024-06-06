@@ -1,9 +1,23 @@
+
 import math
 import numpy as np
 from scipy import stats
 from scipy.stats import ttest_ind
 from Bio import AlignIO
 import argparse 
+
+"""
+This script test if the overall sites within an alignemnt show evidence that the sequecne is not saturated
+It compare the distribution of obserevd entropy accross sites vs the expected entropy under saturation.
+The expected entropy under saturation is cacluated based on the overal frequency of each nucleotide class accorss 
+all infromative sites (have at least two different nuc class represented in the site and no gaps)
+
+command:
+
+    python test_saturation_substitution.py -mult <alignment.fasta> --out <outfile.tsv>
+
+"""
+
 
 def load_align(mult_fasta:str)->object:
     """ Load multiple peptide sequence alignment
