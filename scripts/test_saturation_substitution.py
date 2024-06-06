@@ -142,8 +142,9 @@ def get_over_all_nuc_freq(alignment:object)->tuple:
             for nuc , val in nuc_class.items():
                 overall_nuc_class[nuc] += val
         i += 1
+    print(overall_nuc_class)
     total_nucleotides = sum(overall_nuc_class.values())
-    overall_probs = {nuc: count / total_nucleotides for nuc, count in overall_nuc_class.items()}
+    overall_probs = {nuc: count / total_nucleotides if total_nucleotides > 0 else 0 for nuc, count in overall_nuc_class.items()}
     return overall_probs, overall_nuc_class
 
 def main(align_file:str, out_file:str)-> None:
