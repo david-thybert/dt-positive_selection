@@ -89,10 +89,10 @@ process AlignSequence{
   to improve the aligment of the protein coding sequence.
   
   input:
-  path ortho_nuc: Path to the fasta file storing all the sequence form a similar orthogroup
+  path ortho_pep: Path to the fasta file storing all the peptide sequence from a similar orthogroup
 
   output:
-  path align_seq: Path to multiple sequence alignment of the orthogroup.
+  path aligned_pep: Path to multiple peptide sequence alignment of the orthogroup.
 */
 
     publishDir params.out, mode: 'copy'
@@ -116,6 +116,7 @@ process FilterNonConfidentColumns{
 
   input:
   path align_seq: path to the alignment file
+  
   output:
   path align_filt: path to the filterted alignment
   path reg_filt: path to th efile describing the filtered regions
@@ -138,8 +139,10 @@ process FilterNonConfidentColumns{
 
 process PepAli_2_DNAAli{
 /*This process convert a peptide multiple sequence alignemnt into a DNA multiple sequence alignemnt
+  
   input:
   val pair_pepali_nuc : mapping betwen id, path to pep align, path to nuc file [id, pep_al, nuc_file]
+  
   output:
   path align_nuc : path to the aligned nucleotide sequences
 */
@@ -166,6 +169,7 @@ process ExtractFourFoldDegeSites{
 
   input:
   path align_seq : path to the orthogroup multiple sequence alignment at the fasta format
+  
   output:
   path four_four_deg: path to the multiple sequence alignment of four fold degenrated sites.
 */
@@ -186,6 +190,7 @@ process ExtractFourFoldDegeSites{
 process RaxmlPhylogeny{
 /*Ths process is running the phylogenitc tree reconstruction using Raxml
   and the four fold degenrated site alignment
+  
   input:
   path four_fold_sites: path to the four fold degenerate site multiple alignment
                         file in fasta format
@@ -207,38 +212,13 @@ process RaxmlPhylogeny{
 
 }
 
-process Check_align_and_trees{
-/* This process look for all alignemnt file with a correpsonding tree.
-   and return all pair alignemnt tree in file 
-   input:
-   path align : list of alignments 
-   path trees : list of trees
-   output:
-   path pair_align_tree: file storing all pair alignment/tree with a pair per line  
-*/
-    publishDir params.out, mode: 'copy'
-
-    input:
-        path align
-        path trees
-    
-    output:
-         path  "pair_align_tree.txt", emit: pair_align_tree
-   
-    script:
-        """
-            python $projectDir/scripts/check_align_and_trees.py  --ff_deg "$align" --trees "$trees" --base_dir ${params.out} --out pair_align_tree.txt
-        """
-}
-
-
 process TagForgroundInTree{
 /*This process tag all species belonging to the forground set
   in each phylogenetic trees.
 
   input:
   path tree: the phylogenetic tree
-  path foreground: the file describing the forground species(one species per line)
+ 
   output:
   path tagged_tree: tree tagged with the forground
 */
@@ -246,7 +226,7 @@ process TagForgroundInTree{
 
     input:
         path tree
-        //path foreground
+
     output:
         path "*.bestTree.tagged", emit: tagged_tree
 
@@ -257,9 +237,11 @@ process TagForgroundInTree{
 
 }
 process TestSaturation{
-/*this process test whether a gene multiple alignemnt reached a substitution saturation
+/* This process test whether a gene multiple alignemnt reached a substitution saturation
+   
    input:
    path align_nuc_filt: path of the multiple DNA sequence aligment 
+   
    output:
    path saturation_info: path the information reltive to saturation
 */
@@ -276,11 +258,12 @@ process TestSaturation{
 }
 
 process PositiveSelectionABSREL{
-/* this process rune the positive selction analysis using 
+/* This process rune the positive selction analysis using 
    the aBSREL model.
 
    input:
    val pair_nuc_tree_ch: mapping betwen id, path to dna align, path tree [id, DNA_al, tree]
+   
    output:
    path pos_sel: path to the json file storing positive selection results.
 */
@@ -301,12 +284,13 @@ process PositiveSelectionABSREL{
 }
 
 process CombinePosselInfoABSREL{
-/* this process combine all the json file produced by
+/* This process combine all the json file produced by
    Hyphy aBSREL model.
 
    input:
    path pos_sel_json: the list of hyphy json file from ABSREL model  to be combined 
    path sat_subst : the list of file with substitution saturation annotation
+   
    output:
    path pos_sel: path to the csv combining and multitest correcting the output of possel
 */
@@ -325,7 +309,13 @@ process CombinePosselInfoABSREL{
 }
 
 process CreateCTLFile_null{
-/*
+/* This process create the ctl configuation file for running codeml with the branch site null model
+
+   input:
+      params_ctl : a tuple with values [gene_id, alignemnt, tagged tree]
+
+   output:
+      ctl_files: ctl configuration file for null branch site model 
  */
     publishDir params.out, mode: 'copy'
 
@@ -342,8 +332,15 @@ process CreateCTLFile_null{
 }
 
 process CreateCTLFile_alt{
-/*
- */
+/* This process create the ctl configuation file for running codeml with the branch site alt model
+
+   input:
+      params_ctl : a tuple with values [gene_id, alignemnt, tagged tree]
+
+   output:
+      ctl_files: ctl configuration file for alt branch site model 
+*/
+
     publishDir params.out, mode: 'copy'
 
     input:
@@ -358,7 +355,13 @@ process CreateCTLFile_alt{
     """
 }
 process RunCodeML_null{
-/*
+/* This process run codeml for evaluation the branch site model under null hypothesis
+
+   input: 
+   path ctl_file: path to the ctl configuration file
+
+   output:
+   path ctd_files: path tot he ctd file correpsonding ot the null hypothesis evaluaiton of the branch site model
 */
     publishDir params.out, mode: 'copy'
     
@@ -375,7 +378,13 @@ process RunCodeML_null{
 }
 
 process RunCodeML_alt{
-/*
+/* This process run codeml for evaluation the branch site model under alt hypothesis
+
+   input: 
+   path ctl_file: path to the ctl configuration file
+
+   output:
+   path ctd_files: path tot he ctd file correpsonding ot the alt hypothesis evaluation of the branch site model
 */
     publishDir params.out, mode: 'copy'
     
@@ -393,7 +402,13 @@ process RunCodeML_alt{
 }
 
 process Fasta2Phylip{
-/*
+/* This process convert a multiple alignment in fast format to a phylip format
+
+   input:
+   path fasta_mult: path to the multiple alignment in fasta format
+
+   output:
+   path phy_mult: path to the multiple alignment in phylip format
 */
     publishDir params.out, mode: 'copy'
 
@@ -408,7 +423,10 @@ process Fasta2Phylip{
 }
 
 process CalculateCodemlPval{
-/*
+/* This process calculate a pvalue for evidence that the gene is positivily slected under the branch site model.
+
+   input:
+   val pair_alt_null_ctd: a tuple with format [gene_id, alt cdt, null_cdt ]
 */
     publishDir params.out, mode: 'copy'
 
@@ -423,7 +441,7 @@ process CalculateCodemlPval{
 }
 
 process CombinePosselInfoPML_BRST{
-/* this process combine all the tsv file produced when implementing the branch site model 
+/* This process combine all the tsv file produced when implementing the branch site model 
 with codeml
 
    input:
@@ -458,7 +476,6 @@ workflow{
     // Align protein sequences
     align_pep_ch = AlignSequence(ortho_dir.ortho_pep.flatten())
     
-    /////////// Filtering non informative steps //////////////
     // remove non confident alignment 
     align_pep_filt = FilterNonConfidentColumns(align_pep_ch)
 
