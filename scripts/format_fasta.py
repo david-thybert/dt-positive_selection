@@ -33,7 +33,7 @@ def _getTranscripr_id(description: str) -> str:
 
 
 def readOrthologyFile(orthologues: str) -> dict:
-    '''
+    """
     Read an orthology matrix file and return dictionary obejct representing the matrix.
     In the matrix file, each column is a species and each row is a orthogroup. Each cell
     contains the id of the cannonical trasncript for the orthologous gene for a given 
@@ -43,7 +43,7 @@ def readOrthologyFile(orthologues: str) -> dict:
     :param orthologues: the path tot he ortholog matrix file
     :return: return a dictionary representing the homologius matrix {horthologous group: {species:[transcriptid,'','']}}.
     
-    '''
+    """
     result = {}
     with open(orthologues) as file_handler:
         species_list = next(file_handler).strip().split("\t")
@@ -78,19 +78,13 @@ def createPepFile(orthogroup_path: str, orthogroup: str, peptide: str, orthodata
             if _getTranscripr_id(record.description) == genes[0]:
                 description  = f"species:{species} transcript:{genes[0]} ortho:{orthogroup}"
                 record.id = f"{genes[0]}|{species}"
-                record.description = ""#species #""#description
+                record.description = ""
                 fasta_list.append(record)
-    
-    #pep_file = f"{orthogroup_path}/{orthogroup}.pep.fasta"
-    #with open(pep_file, "w") as output_handle:
-    #    SeqIO.write(fasta_list, output_handle, "fasta")
-        
-    #print(f"orthogroup pep {orthogroup} saved")
     return fasta_list
 
 
 def createNucFile(orthogroup_path: str, orthogroup: str, nucleotide: str, orthodata: dict) -> list :
-    '''
+    """
     This method group all nucleotide sequences from each orthogroup into one file per orthogroup. 
 
     :param orthogroup_path: basal path where the orthogroup files will be stored
@@ -98,7 +92,7 @@ def createNucFile(orthogroup_path: str, orthogroup: str, nucleotide: str, orthod
     :param nucleotide: basal path where all the nucleotide files are saved for each species
     :param orthodata: dictionary containing the orthology matrix
     :return: returns nothing
-    '''
+    """
     fasta_list = []
     for species, genes in orthodata.items():
         species_sequences = f"{nucleotide}/{species}/{species}.cds.fasta"
@@ -108,16 +102,10 @@ def createNucFile(orthogroup_path: str, orthogroup: str, nucleotide: str, orthod
             record = record_dict[genes[0]]
             description  = f"species:{species} transcript:{genes[0]} ortho:{orthogroup}"
             record.id = f"{genes[0]}|{species}"
-            record.description = ""#species#description
+            record.description = ""
             fasta_list.append(record)
         except KeyError as err:
             print(f"{genes[0]} absent from the fasta file : {err}")
-    
-    #nuc_file = f"{orthogroup_path}/{orthogroup}.nuc.fasta"
-    #with open(nuc_file, "w") as output_handle:
-    #    SeqIO.write(fasta_list, output_handle, "fasta")
-
-    #print(f"orthogroup nuc {orthogroup} saved")
     return fasta_list
 
 def check_consistancy(lst_pep_fasta, lst_nuc_fasta) -> bool:
@@ -148,7 +136,7 @@ def check_consistancy(lst_pep_fasta, lst_nuc_fasta) -> bool:
     return True 
 
 def main(orthologues: str, nucleotide: str, peptides: str, outBase: str) -> None:
-    '''
+    """
     Main function of the script. It reads the orhtology matrix and then use 
     the info from the orthology matrix to group pep and nuc sequenes in a
     coprrepsonding pep and nuc orhtogroup file
@@ -158,7 +146,7 @@ def main(orthologues: str, nucleotide: str, peptides: str, outBase: str) -> None
     :param peptides: path to the peptide file
     :param outBase: path to the out directory
     :return: returns nothing
-    '''
+    """
    
     try :
         os.mkdir(outBase)       
@@ -192,8 +180,8 @@ parser.add_argument('--ortho',type=str, help='file describing the orhtology rela
 parser.add_argument('--nuc', type=str, help='path to the directory contianing the CDS files')
 parser.add_argument('--pep', type=str, help='path to the directory contianing the peptide files')
 parser.add_argument('--out', type=str, help='path to the outdirectory')
-args = parser.parse_args()
 
+args = parser.parse_args()
 main(args.ortho, args.nuc, args.pep, args.out)
 
 

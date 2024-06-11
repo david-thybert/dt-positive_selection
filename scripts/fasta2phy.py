@@ -1,12 +1,22 @@
-import argparse 
-from Bio import Align
+import argparse
+
 from Bio import AlignIO
 from Bio.AlignIO.PhylipIO import SequentialPhylipWriter
-from pathlib import Path
-import re
+
+
+
+"""
+This script convert a multiple sequence alignemnt in fasta to phylip format
+
+command:
+
+    python fasta2phy.py --mult_fasta <fasta file> --out_phy <alignemnt file .phy>
+
+"""
 
 def main(mult_fasta:str, mult_phy:str)-> None:
-    """This script convert a multiple alignment in fsta format 
+    """
+    This script convert a multiple alignment in fsta format 
     to phylip format
 
     :param mult_fasta: path to the mulitple alignment filw in fasta format
@@ -26,7 +36,7 @@ def main(mult_fasta:str, mult_phy:str)-> None:
 ########### Main script
 ########################################################################################
 
-parser = argparse.ArgumentParser(description='Script formating the data to be handle by the positvie selction pipeline')
+parser = argparse.ArgumentParser(description='Script converting a multiple sequence alignment from fast to phylip format')
 
 parser.add_argument('--mult_fasta',type=str, help='multiple alignment in fasta format')
 parser.add_argument('--out_phy', type=str, help='name of the phyle in phylip format')

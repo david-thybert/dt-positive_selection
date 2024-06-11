@@ -186,9 +186,9 @@ def main(align_file:str, out_file:str)-> None:
 ########################################################################################
 
 
-parser = argparse.ArgumentParser(description='Script formating the data to be handle by the positvie selction pipeline')
+parser = argparse.ArgumentParser(description='This script test whether the overall sites within an alignemnt show evidence for saturation or not')
 parser.add_argument('--mult',type=str, help='multiple alignment in fasta format')
 parser.add_argument('--out', type=str, help='path to the output file')
-args = parser.parse_args()
 
+args = parser.parse_args()
 main(args.mult, args.out)

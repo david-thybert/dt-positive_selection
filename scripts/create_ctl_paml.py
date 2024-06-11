@@ -1,7 +1,20 @@
 import argparse
 
+"""
+This script create a ctl file describing the model to run using codeml. The model implemented are the null model for branch site test (fixing w to 1)
+and the alternative branch site test where w is estimated from the data.
+
+command:
+
+    python create_ctl_paml.py --type <null|alt> --alignment <alignemnt file .phy> --tree <tree file (with tag)> --out_PAML <path to cdt file> --out_file <path to ctl file>
+
+"""
+
 def create_empty_ctl_dic()->dict:
     """
+    This function create an empty dict will all filed required by ctl file
+
+    :return : dictionary with inital values
     """
     ctl = {"seqfile":"", "treefile":"", "outfile":"",
            "noisy":9, "verbose":1,"runmode":0,
@@ -16,6 +29,9 @@ def create_empty_ctl_dic()->dict:
 
 def main(alignment:str, tree:str, type:str, out_PAML:str, out_file:str)-> None:
     """
+    Main function of th script
+    
+    :param  alignment: path to lignment file in phylip format
     """
     ctl = create_empty_ctl_dic()
 
@@ -41,12 +57,12 @@ def main(alignment:str, tree:str, type:str, out_PAML:str, out_file:str)-> None:
 ########### Main script
 ########################################################################################
 
-parser = argparse.ArgumentParser(description='The script check that the nucleotide unaligned file correspsond to the aligned peptide file')
-parser.add_argument('--alignment',type=str, help='list of degenerated files')
-parser.add_argument('--tree',type=str, help='base directory for the files') 
-parser.add_argument('--out_PAML',type=str, help='base directory for the files')
-parser.add_argument('--out_file',type=str, help='base directory for the files')
-parser.add_argument('--type',type=str, help='null|alt')
-args = parser.parse_args()
+parser = argparse.ArgumentParser(description='This script create aconfiguration file for codeml model')
+parser.add_argument('--alignment',type=str, help='path to multiple sequence alignment in phylip format')
+parser.add_argument('--tree',type=str, help='path tot he tree in nwk format *(tree need to be tagged)') 
+parser.add_argument('--out_PAML',type=str, help='path to the future cdt file genereated by codeml')
+parser.add_argument('--out_file',type=str, help='path to the output ctl file ')
+parser.add_argument('--type',type=str, help='null|alt whther the script generate a confidguraiton for the null or alternative model ')
 
+args = parser.parse_args()
 main(args.alignment, args.tree, args.type, args.out_PAML, args.out_file)

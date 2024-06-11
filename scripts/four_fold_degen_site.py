@@ -1,4 +1,3 @@
-import typing
 import argparse 
 
 from Bio import AlignIO
@@ -7,8 +6,19 @@ from Bio.SeqRecord import SeqRecord
 from Bio.Align import Alignment
 from Bio import AlignIO
 
+
+"""
+This script exctract the four fold degenrated site from conserved amino acid in a cdna multiple alignment 
+and build an aligmment based only on these site across the sequences of the alignment
+
+command:
+
+    python fasta2phy.py --nucal <CDNA aligment in fasta> --out <four fold degenrate site alignment>
+
+"""
+
 def four_fold_degen(triplet: str) -> str:
-    '''
+    """
     This method return the last nucleotide of a fou fold degenrate site codon.
     if the codon is not four fold degenratethen return empty string.
     "CGU, CGC, CGA, CGG" --> Arg
@@ -21,7 +31,7 @@ def four_fold_degen(triplet: str) -> str:
 
     :param triplet: codon to be evaluated
     :return: returns a nucleotide if the codon is four fold degenrated , an empty string otherwise
-    '''
+    """
     if triplet[-1] == '-':
         return ""
     if triplet[0:2] == "CG":# Arg
@@ -42,14 +52,14 @@ def four_fold_degen(triplet: str) -> str:
 
 
 def _to_alignment_object(matrix: list, ori_align:Alignment) -> Alignment:
-    '''
+    """
     This method build a multiple alignment object from the four fold degenated site matrix 
     and keep the same sequecne id that in the original multiple alignment
 
     :param matrix: matrix of four fold degenrated site
     :ori_align: original multiple sequence alignment
     :return: multiple sequence alignment object of four fold degenerated sites.
-    '''
+    """
     sequences = []
     i = 0
     while i  < len(matrix[0]):
@@ -65,13 +75,13 @@ def _to_alignment_object(matrix: list, ori_align:Alignment) -> Alignment:
 
 
 def get_4_fold_dege_align(alignment: Alignment) -> Alignment:
-    '''
-    Retrive all four fold degenrate site that ahs the two first 
-    nucleotid of the codon conserved across the species analysed
+    """
+    Retrieve all four fold degenerate sites that has the two first 
+    nucleotids of the codon conserved across the species analysed
 
     :param alignment: multiple sequence alignment of the cDNA at the nucleotide level
     :return: multiple alignment objecit of alny the four fold degenerated sites
-    '''
+    """
     index_codon = 0
     deg_align = []
     while index_codon < len(alignment[0]):
@@ -98,12 +108,12 @@ def get_4_fold_dege_align(alignment: Alignment) -> Alignment:
 
 
 def main(nuc_align: str, outfile: str) -> None:
-    '''
-    Main fucntiona of the script
+    """
+    Main function of the script
 
-    :param nuc_align: path tot he multiple sequence alignment
+    :param nuc_align: path to the multiple sequence alignment
     :param outfile: path tothe out file storing the four fold degenrated multiple alignment.
-    '''
+    """
     alignment = AlignIO.read(open(nuc_align), "fasta")
     four_fold_align = get_4_fold_dege_align(alignment)
     with open(outfile, "w") as file_hanlder:
@@ -115,9 +125,9 @@ def main(nuc_align: str, outfile: str) -> None:
 ########### Main script
 ########################################################################################
 
-parser = argparse.ArgumentParser(description='The script check that the nucleotide unaligned file correspsond to the aligned peptide file')
-parser.add_argument('--nucal',type=str, help='peptide alignemnt file')
-parser.add_argument('--out', type=str, help='path to the outdirectory')
-args = parser.parse_args()
+parser = argparse.ArgumentParser(description='This script exctract the four fold degenrated site and generate an alignemnt of them')
+parser.add_argument('--nucal',type=str, help='cDNA alignemnt file in fasta')
+parser.add_argument('--out', type=str, help='output file with four fold degenrate site alignemnt')
 
+args = parser.parse_args()
 main(args.nucal, args.out)

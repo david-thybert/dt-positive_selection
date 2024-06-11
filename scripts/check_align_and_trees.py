@@ -49,6 +49,7 @@ def main(ff_align_lst_file: str, tree_lst_file: str, out_base_dir: str, out_file
     tree_files = tree_lst_file.split(" ")
 
     pair_files = check_correspondance(ff_files, tree_files)
+    
     with open(out_file, "w") as file_handler:
         print("wite files\n")
         for ff_deg_tree_pair in pair_files:
@@ -61,6 +62,6 @@ parser.add_argument('--ff_deg',type=str, help='list of degenerated files')
 parser.add_argument('--base_dir',type=str, help='base directory for the files') 
 parser.add_argument('--trees',type=str, help='list of trees')
 parser.add_argument('--out', type=str, help='outfiles')
-args = parser.parse_args()
 
+args = parser.parse_args()
 main(args.ff_deg, args.trees, args.base_dir, args.out)

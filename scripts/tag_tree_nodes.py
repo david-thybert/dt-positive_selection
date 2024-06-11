@@ -1,6 +1,16 @@
 import argparse 
 from ete3 import Tree
 
+
+"""
+This script launch codeml and check that there is not errors
+
+command:
+
+    python tag_tree_nodes.py --tree <nwk file> --spe_tag <file listing leafs to tag> --tag_name <"tag_name"> --ancestral <True/False> --out <tagged nwk file>
+
+"""
+
 def load_species_to_tag(species_tag:str)->list:
     """
     Load the list fo species to tag in the phyloegentic tree
@@ -40,7 +50,8 @@ def tag_ancestors(node:Tree, lca:Tree, tag:str)->Tree:
     return node
 
 def tag_tree(tree:Tree, species_to_tag:list, tag_name:str, anc:bool)->Tree:
-    """this function tag all leafs deined in the list to tag. If the ancestor 
+    """
+    This function tag all leafs deined in the list to tag. If the ancestor 
     tag is true then it will tag all ancestor from each leaf until the LCA 
 
     :param tree: the tree containing the tags.
@@ -88,12 +99,12 @@ def main(tree_file:str, species_tag:str, tag_name:str, anc:bool, out_file:str)->
 ########### Main script
 ########################################################################################
 
-parser = argparse.ArgumentParser(description='Script formating the data to be handle by the positvie selction pipeline')
+parser = argparse.ArgumentParser(description='This script tag a branch of nwk tree to be used for phylogenetic analyses')
 parser.add_argument('--tree',type=str, help='nwk file describing the phylogeny')
 parser.add_argument('--spe_tag', type=str, help='file that contains the list of species to tag in the tree')
 parser.add_argument('--out', type=str, help='path to the tagged tree')
 parser.add_argument('--tag_name', type=str, help='name of the tag for the forgrand analysis')
 parser.add_argument('--ancestral', type=bool, default=False, help='tag defining if common ancestral node will be tagged as well (work for more than two species taged)')
-args = parser.parse_args()
 
+args = parser.parse_args()
 main(args.tree, args.spe_tag, args.tag_name, args.ancestral, args.out)

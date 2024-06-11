@@ -4,6 +4,17 @@ from Bio.SeqRecord import SeqRecord
 from Bio.Align import Alignment
 from Bio import AlignIO
 
+
+"""
+This script identify with zorro region of a multiple sequence alignment that is not confident and remove them.
+
+command:
+
+    python zorro_wrapper.py --zorro <path to zorro> --tree_cmd <path to Fastree> --mult <fmultiple alignment fasta> --threshold <0. - 10.> --out <filtered alignment> 
+
+"""
+
+
 def run_zorro(mult_fasta:str, zorro_cmd:str, tree_cmd:str)->list:
     """
     Wrapper around zorro and return the score for the alignment in each position
@@ -145,5 +156,4 @@ parser.add_argument('--zorro', type=str, help='path to zorro')
 parser.add_argument('--tree_cmd', type=str, help='tree_command')
 
 args = parser.parse_args()
-
 main(args.mult, args.zorro, args.tree_cmd, args.threshold, args.out)
