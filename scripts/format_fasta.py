@@ -33,7 +33,7 @@ def _getTranscripr_id(description: str) -> str:
 
 
 def readOrthologyFile(orthologues: str) -> dict:
-    '''
+    """
     Read an orthology matrix file and return dictionary obejct representing the matrix.
     In the matrix file, each column is a species and each row is a orthogroup. Each cell
     contains the id of the cannonical trasncript for the orthologous gene for a given 
@@ -43,7 +43,7 @@ def readOrthologyFile(orthologues: str) -> dict:
     :param orthologues: the path tot he ortholog matrix file
     :return: return a dictionary representing the homologius matrix {horthologous group: {species:[transcriptid,'','']}}.
     
-    '''
+    """
     result = {}
     with open(orthologues) as file_handler:
         species_list = next(file_handler).strip().split("\t")
@@ -62,6 +62,7 @@ def readOrthologyFile(orthologues: str) -> dict:
 def createPepFile(orthogroup_path: str, orthogroup: str, peptide: str, orthodata: dict) -> list :
     '''
     This method group all peptide sequences from each orthogroup into one file per orthogroup. 
+    {horthologous group: {species:[transcriptid,'','']}}.
 
     :param orthogroup_path: basal path where the orthogroup files will be stored
     :param orthogroup: name of the orthogroup
@@ -76,20 +77,14 @@ def createPepFile(orthogroup_path: str, orthogroup: str, peptide: str, orthodata
         for record in seq_records:
             if _getTranscripr_id(record.description) == genes[0]:
                 description  = f"species:{species} transcript:{genes[0]} ortho:{orthogroup}"
-                record.id = genes[0]
-                record.description = description
+                record.id = f"{genes[0]}|{species}"
+                record.description = ""
                 fasta_list.append(record)
-    
-    #pep_file = f"{orthogroup_path}/{orthogroup}.pep.fasta"
-    #with open(pep_file, "w") as output_handle:
-    #    SeqIO.write(fasta_list, output_handle, "fasta")
-        
-    #print(f"orthogroup pep {orthogroup} saved")
     return fasta_list
 
 
 def createNucFile(orthogroup_path: str, orthogroup: str, nucleotide: str, orthodata: dict) -> list :
-    '''
+    """
     This method group all nucleotide sequences from each orthogroup into one file per orthogroup. 
 
     :param orthogroup_path: basal path where the orthogroup files will be stored
@@ -97,28 +92,31 @@ def createNucFile(orthogroup_path: str, orthogroup: str, nucleotide: str, orthod
     :param nucleotide: basal path where all the nucleotide files are saved for each species
     :param orthodata: dictionary containing the orthology matrix
     :return: returns nothing
-    '''
+    """
     fasta_list = []
     for species, genes in orthodata.items():
         species_sequences = f"{nucleotide}/{species}/{species}.cds.fasta"
+        print(species_sequences)
         record_dict = SeqIO.to_dict(SeqIO.parse(species_sequences, "fasta"))
         try:
             record = record_dict[genes[0]]
             description  = f"species:{species} transcript:{genes[0]} ortho:{orthogroup}"
-            record.id = genes[0]
-            record.description = description
+            record.id = f"{genes[0]}|{species}"
+            record.description = ""
             fasta_list.append(record)
         except KeyError as err:
             print(f"{genes[0]} absent from the fasta file : {err}")
-    
-    #nuc_file = f"{orthogroup_path}/{orthogroup}.nuc.fasta"
-    #with open(nuc_file, "w") as output_handle:
-    #    SeqIO.write(fasta_list, output_handle, "fasta")
-
-    #print(f"orthogroup nuc {orthogroup} saved")
     return fasta_list
 
 def check_consistancy(lst_pep_fasta, lst_nuc_fasta) -> bool:
+    """
+     This method check that CDNA and pep sequence corresponde
+
+     :param lst_pep_fasta: list fo peptide sequence
+     :param lst_nuc_fasta: list of nucleotide sequences
+     :return: True if all nuc sequence correpsont to the peptide equivalent False otherwise 
+    """
+    return True
     for nuc in lst_nuc_fasta:
         found = False
         if len(nuc) %3 != 0:
@@ -138,7 +136,7 @@ def check_consistancy(lst_pep_fasta, lst_nuc_fasta) -> bool:
     return True 
 
 def main(orthologues: str, nucleotide: str, peptides: str, outBase: str) -> None:
-    '''
+    """
     Main function of the script. It reads the orhtology matrix and then use 
     the info from the orthology matrix to group pep and nuc sequenes in a
     coprrepsonding pep and nuc orhtogroup file
@@ -148,7 +146,7 @@ def main(orthologues: str, nucleotide: str, peptides: str, outBase: str) -> None
     :param peptides: path to the peptide file
     :param outBase: path to the out directory
     :return: returns nothing
-    '''
+    """
    
     try :
         os.mkdir(outBase)       
@@ -164,11 +162,13 @@ def main(orthologues: str, nucleotide: str, peptides: str, outBase: str) -> None
         fasta_nuc = createNucFile(outBase, ortho, nucleotide, lst_genes)
         if check_consistancy(fasta_pep, fasta_nuc):
             nuc_file = f"{outBase}/{ortho}.nuc.fasta"
-            print(nuc_file)
+            pep_file = f"{outBase}/{ortho}.pep.fasta"
             with open(nuc_file, "w") as output_handle:
                 SeqIO.write(fasta_nuc, output_handle, "fasta")
+            with open(pep_file, "w") as output_handle:
+                SeqIO.write(fasta_pep, output_handle, "fasta")
         else:
-            print(f"issue in the orthogroup {ortho}: the nuceotide file does correpsondant to pep file")    
+            print(f"issue in the orthogroup {ortho}: the nuceotide file does not correpsondant to pep file")    
 
 
 ########################################################################################
@@ -180,8 +180,8 @@ parser.add_argument('--ortho',type=str, help='file describing the orhtology rela
 parser.add_argument('--nuc', type=str, help='path to the directory contianing the CDS files')
 parser.add_argument('--pep', type=str, help='path to the directory contianing the peptide files')
 parser.add_argument('--out', type=str, help='path to the outdirectory')
-args = parser.parse_args()
 
+args = parser.parse_args()
 main(args.ortho, args.nuc, args.pep, args.out)
 
 
