@@ -10,29 +10,37 @@ params.zorro_command = "$projectDir/ext/zorro-master/bin/zorro"
 params.fasttree_command = "$projectDir/ext/zorro-master/bin/FastTree" 
 params.zorro_thr = "5.0"
 params.pal2nal = "$projectDir/ext/pal2nal.v14/pal2nal.pl"
+params.codeml_command = "$projectDir/ext/paml-master/bin/codeml"
 params.raxml_command = "$projectDir/ext/raxml/raxml-ng"
 params.fgrd_species = "$projectDir/data/foreground.txt"
 params.ancestral = "False"
+params.possel_method = "ABSREL" // ABSREL | PAML_BRST
+if (params.possel_method == "PAML_BRST" )
+{params.tag_fgrd = "#1"}
+else
+{params.tag_fgrd = "{fgrd}"}
 
 
 
 log.info"""\
 
-    =================================================================
-    |                                                               |
-    |    *****      *****      ******    ******   ******   *        |
-    |    *    *   *       *   *         *         *        *        |
-    |    *    *  *         *  *         *         *        *        |
-    |    *****   *         *   ******    ******   ******   *        |
-    |    *       *         *         *         *  *        *        |
-    |    *        *       *          *         *  *        *        |
-    |    *          *****      ******     *****   ******   ******   |
-    |                                                               |
-    |                                                               |
-    |              A POSITIVE SELECTION ANALYSIS PIPELINE           |
-    |                                                               |
-    =================================================================
+    ==================================================================
+    |                                                                |
+    |    *****      *****      ******    ******   ******   *         |
+    |    *    *   *       *   *         *         *        *         |
+    |    *    *  *         *  *         *         *        *         |
+    |    *****   *         *   ******    ******   ******   *         |
+    |    *       *         *         *         *  *        *         |
+    |    *        *       *          *         *  *        *         |
+    |    *          *****      ******     *****   ******   ******    |
+    |                                                                |
+    |                                                                |
+    |             A POSitive SELection analysis pipeline             |
+    |                                                                |
+    ==================================================================
                    
+"""
+/*
     Parameters: 
     ortho: $params.ortho
     nuc: $params.nuc
@@ -40,8 +48,7 @@ log.info"""\
     out: $params.out
     prank location: $params.prank_command 
     raxml location: $params.raxml_command
-
-"""
+*/
 
 process FormatFasta{
 /* This process format fasta files to be compatible with positive selction analysis
@@ -245,7 +252,7 @@ process TagForgroundInTree{
 
     script:
     """
-        python $projectDir/scripts/tag_tree_nodes.py --tree $tree --spe_tag $params.fgrd_species --out ${tree}.tagged --tag {fgrd} --ancestral $params.ancestral
+        python $projectDir/scripts/tag_tree_nodes.py --tree $tree --spe_tag $params.fgrd_species --out ${tree}.tagged --tag "$params.tag_fgrd"  --ancestral $params.ancestral
     """
 
 }
@@ -293,7 +300,7 @@ process PositiveSelectionABSREL{
     
 }
 
-process Combine_possel_info{
+process CombinePosselInfoABSREL{
 /* this process combine all the json file produced by
    Hyphy aBSREL model.
 
@@ -313,10 +320,135 @@ process Combine_possel_info{
 
     script:
     """
-         python $projectDir/scripts/combine_pos_sell_info.py --files_possel "$pos_sel_json" --files_sat_subst "$sat_subst" --prefix_out "aBSREL"
+         python $projectDir/scripts/combine_pos_sell_info_absrel.py --files_possel "$pos_sel_json" --files_sat_subst "$sat_subst" --prefix_out "aBSREL"
     """
 }
 
+process CreateCTLFile_null{
+/*
+ */
+    publishDir params.out, mode: 'copy'
+
+    input:
+        val params_ctl
+    
+    output:
+        path "*.${type_ctl}.ctl", emit: ctl_files
+    
+    script:
+    """
+        python $projectDir/scripts/create_ctl_paml.py --alignment ${params_ctl[1]}  --tree ${params_ctl[2]} --out_PAML ${params_ctl[0]}.null.ctd --out_file ${params_ctl[0]}.null.ctl --type null
+    """
+}
+
+process CreateCTLFile_alt{
+/*
+ */
+    publishDir params.out, mode: 'copy'
+
+    input:
+        val params_ctl
+    
+    output:
+        path "*.alt.ctl", emit: ctl_files
+    
+    script:
+    """
+        python $projectDir/scripts/create_ctl_paml.py --alignment ${params_ctl[1]}  --tree ${params_ctl[2]} --out_PAML ${params_ctl[0]}.alt.ctd --out_file ${params_ctl[0]}.alt.ctl --type alt
+    """
+}
+process RunCodeML_null{
+/*
+*/
+    publishDir params.out, mode: 'copy'
+    
+    input:
+        path ctl_file
+    
+    output:
+        //path "*.${type_ctl}.ctd", emit: ctd_files
+        path "*.null.ctd", emit: ctd_files
+    script:
+    """
+        python $projectDir/scripts/run_codeml.py --codeml $params.codeml_command --ctl $ctl_file
+    """
+}
+
+process RunCodeML_alt{
+/*
+*/
+    publishDir params.out, mode: 'copy'
+    
+    input:
+        path ctl_file
+    
+    output:
+       // path "*.${type_ctl}.ctd", emit: ctd_files
+       path "*.alt.ctd", emit: ctd_files
+    
+    script:
+    """
+        python $projectDir/scripts/run_codeml.py --codeml $params.codeml_command --ctl $ctl_file
+    """
+}
+
+process Fasta2Phylip{
+/*
+*/
+    publishDir params.out, mode: 'copy'
+
+    input:
+        path fasta_mult
+    output:
+        path "*.phy", emit: phy_mult
+    script:
+    """
+        python $projectDir/scripts/fasta2phy.py --mult_fasta $fasta_mult --out_phy ${fasta_mult}.phy
+    """
+}
+
+process CalculateCodemlPval{
+/*
+*/
+    publishDir params.out, mode: 'copy'
+
+    input:
+        val pair_alt_null_ctd
+    output:
+        path "*.pml.brst", emit: pml_brst
+    script:
+    """
+        python $projectDir/scripts/calculate_codeml_pval.py --alt_codeml ${pair_alt_null_ctd[1]}  --null_codeml ${pair_alt_null_ctd[2]} --out ${pair_alt_null_ctd[0]}.pml.brst
+    """   
+}
+
+process CombinePosselInfoPML_BRST{
+/* this process combine all the tsv file produced when implementing the branch site model 
+with codeml
+
+   input:
+   path pos_sel_tsv: the list of hyphy tsv file from  codeml branch site 
+   path sat_subst : the list of file with substitution saturation annotation
+   output:
+   path pos_sel: path to the csv combining and multitest correcting the output of possel
+*/
+    publishDir params.out, mode: 'copy'
+
+    input:
+        path pos_sel_tsv
+        path sat_subst
+    output:
+        path "*.possel", emit: pos_sel
+
+    script:
+    """
+         python $projectDir/scripts/combine_pos_sell_info_brst.py --files_possel "$pos_sel_tsv" --files_sat_subst "$sat_subst" --prefix_out "PML_BRST"
+    """
+}
+
+
+
+//combine_pos_sell_info_brst
 nextflow.enable.dsl=2
 
 workflow{
@@ -342,23 +474,60 @@ workflow{
     four_four_deg_ch = ExtractFourFoldDegeSites(nuc_ali_filt.flatten())
     tree_ch = RaxmlPhylogeny(four_four_deg_ch.flatten())
 
-    // tag trees with foreground tag
-    //foreground_ch = channel.fromPath(params.fgrd_species)
-    tree_tagged_ch = TagForgroundInTree(tree_ch.flatten())
-    
     // test for saturation
     sat_info_ch = TestSaturation(four_four_deg_ch.flatten())
 
-    // combining 
-    tree_tagged_id_ch = tree_tagged_ch.flatten().map { [it.toString().split("/")[-1].split(".nuc")[0], it]}
-    nuc_ali_filt_id_ch = nuc_ali_filt.flatten().map { [it.toString().split("/")[-1].split(".nuc")[0], it]}
-    pair_nuc_tree_ch = nuc_ali_filt_id_ch.combine(tree_tagged_id_ch, by: 0)
-    //pair_nuc_tree_ch.view()
+    if ( params.possel_method == "ABSREL" ) {// ABSREL model
+        
+        tag_fgrd = "{fgrd}"
+        // tag trees with foreground tag
+        //foreground_ch = channel.fromPath(params.fgrd_species)
+        tree_tagged_ch = TagForgroundInTree(tree_ch.flatten())
+        // combining 
+        tree_tagged_id_ch = tree_tagged_ch.flatten().map { [it.toString().split("/")[-1].split(".nuc")[0], it]}
+        nuc_ali_filt_id_ch = nuc_ali_filt.flatten().map { [it.toString().split("/")[-1].split(".nuc")[0], it]}
+        pair_nuc_tree_ch = nuc_ali_filt_id_ch.combine(tree_tagged_id_ch, by: 0)
+        //pair_nuc_tree_ch.view()
 
-    // positive selection
-    pos_sel_res_ch  = PositiveSelectionABSREL(pair_nuc_tree_ch)
+        // positive selection
+        pos_sel_res_ch  = PositiveSelectionABSREL(pair_nuc_tree_ch)
     
-    // combine result and multiple test correciton
-    pos_sel_comb_ch = Combine_possel_info(pos_sel_res_ch.collect(), sat_info_ch.collect())
+        // combine result and multiple test correciton
+        pos_sel_comb_ch = CombinePosselInfoABSREL(pos_sel_res_ch.collect(), sat_info_ch.collect())
+    }
+    else if(params.possel_method == "PAML_BRST" ){
+
+        tag_fgrd = "#1"
+        //foreground_ch = channel.fromPath(params.fgrd_species)
+        tree_tagged_ch = TagForgroundInTree(tree_ch.flatten())
+        
+        // fasta2phylyp
+        nuc_ali_filt_phy_ch = Fasta2Phylip(nuc_ali_filt.flatten())
+
+        //combine alignment and tree
+        tree_tagged_id_ch = tree_tagged_ch.flatten().map { [it.toString().split("/")[-1].split(".nuc")[0], it]}
+        nuc_ali_filt_id_ch = nuc_ali_filt_phy_ch.flatten().map { [it.toString().split("/")[-1].split(".nuc")[0], it]}
+        pair_nuc_tree_ch = nuc_ali_filt_id_ch.combine(tree_tagged_id_ch, by: 0)
+       
+        //create CTL null hyp and run codeml
+        null_ctl_ch = CreateCTLFile_null(pair_nuc_tree_ch)
+        null_ctd_ch = RunCodeML_null(null_ctl_ch)
+        
+        //create CTL alt hyp and run codeml
+        alt_ctl_ch = CreateCTLFile_alt(pair_nuc_tree_ch)
+        alt_ctd_ch = RunCodeML_alt(alt_ctl_ch)
+        
+        // map two ctd file to calulate based ont he gene id.
+        null_ctd_id_ch = null_ctd_ch.flatten().map { [it.toString().split("/")[-1].split(".null")[0], it]}
+        alt_ctd_id_ch = alt_ctd_ch.flatten().map { [it.toString().split("/")[-1].split(".alt")[0], it]}
+        pair_null_alt_ctd_ch = alt_ctd_id_ch.combine(null_ctd_id_ch, by: 0)
+
+        // calculate pval and store file
+        pml_brst_ch = CalculateCodemlPval(pair_null_alt_ctd_ch)
+
+        // combine all outfile into a possel file
+        pos_sel_comb_ch = CombinePosselInfoPML_BRST(pml_brst_ch.collect(), sat_info_ch.collect())
+    }
+
 
 }

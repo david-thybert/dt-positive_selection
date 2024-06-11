@@ -17,8 +17,8 @@ def run_zorro(mult_fasta:str, zorro_cmd:str, tree_cmd:str)->list:
     command = f"{zorro_cmd} -treeprog {tree_cmd} {mult_fasta}"
     out_process = subprocess.run(command, shell=True, capture_output=True)
     print(out_process.returncode)
-    #if out_process.returncode != 1: # strangly zorro return 1 when process succesful
-    #    raise Exception(f"issue running zorro with file {mult_fasta}") 
+    if out_process.returncode != 1: # strangly zorro return 1 when process succesful
+        raise Exception(f"issue running zorro with file {mult_fasta}") 
     
     try: # this try blcok is to compensate the non follwoing the norm of zorro with eror status
         lst_score = out_process.stdout.split()
