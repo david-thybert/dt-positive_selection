@@ -102,7 +102,7 @@ def main(files:str, file_sat_subst:str, pref_out:str)->None:
     for id, files in dico_input.items():
         tsv = files[0]
         sat_subst = files[1]
-        val = fetch_pos_sel_info(id, tsv, sat_subst)
+        val = fetch_pos_sel_info(tsv, sat_subst)
         pos_sel_vals.append(val)
 
     #converting array to pandas df
