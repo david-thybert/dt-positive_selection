@@ -72,10 +72,11 @@ def createPepFile(orthogroup_path: str, orthogroup: str, peptide: str, orthodata
     '''
     fasta_list = []
     for species, genes in orthodata.items():
-        species_sequences = f"{peptide}/{species}/{species}.pep.fasta"
+        species_sequences = f"{peptide}/{species}.fa"
         seq_records = SeqIO.parse(species_sequences, "fasta")
         for record in seq_records:
-            if _getTranscripr_id(record.description) == genes[0]:
+            #if _getTranscripr_id(record.description) == genes[0]:
+            if record.id == genes[0]:
                 description  = f"species:{species} transcript:{genes[0]} ortho:{orthogroup}"
                 record.id = f"{genes[0]}|{species}"
                 record.description = ""
@@ -95,7 +96,7 @@ def createNucFile(orthogroup_path: str, orthogroup: str, nucleotide: str, orthod
     """
     fasta_list = []
     for species, genes in orthodata.items():
-        species_sequences = f"{nucleotide}/{species}/{species}.cds.fasta"
+        species_sequences = f"{nucleotide}/{species}.fa"
         print(species_sequences)
         record_dict = SeqIO.to_dict(SeqIO.parse(species_sequences, "fasta"))
         try:
