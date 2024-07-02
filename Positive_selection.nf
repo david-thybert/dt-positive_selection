@@ -1,6 +1,6 @@
 #!/Users/dthybert/bin//nextflow
 
-params.ortho = "$projectDir/data/orthologues_rod_20.txt"
+params.ortho = "$projectDir/data/orthologues.txt"
 params.nuc = "$projectDir/data/nuc/"
 params.pep = "$projectDir/data/pep/"
 params.out = "$projectDir/out/"
@@ -127,12 +127,13 @@ process FilterNonConfidentColumns{
         path align_seq
 
     output:
-        path "*.filt.fa", emit: align_filt
+        path "*.nuc.filt", emit: nuc
+        path "*.pep.filt", emit: pep
         path "*.conf_reg", emit : reg_filt
     
     script:
     """
-        python $projectDir/scripts/zorro_wrapper.py --mult $align_seq --zorro $params.zorro_command --tree_cmd $params.fasttree_command --out ${align_seq}.filt.fa --threshold $params.zorro_thr
+        python $projectDir/scripts/zorro_wrapper.py --mult_pep ${align_seq[1]} --mult_nuc ${align_seq[2]} --zorro $params.zorro_command --tree_cmd $params.fasttree_command --out ${align_seq[0]} --threshold $params.zorro_thr
     """
 
 }
@@ -152,11 +153,11 @@ process PepAli_2_DNAAli{
         val pair_pepali_nuc
 
     output:
-        path "*.nuc.ali.fasta", emit: align_nuc
+        path "*.nuc.ali.fa", emit: align_nuc
     
     script:
     """
-        perl $params.pal2nal -output fasta ${pair_pepali_nuc[1]} ${pair_pepali_nuc[2]} > ./${pair_pepali_nuc[0]}.nuc.ali.fasta
+        perl $params.pal2nal -output fasta ${pair_pepali_nuc[1]} ${pair_pepali_nuc[2]} > ./${pair_pepali_nuc[0]}.nuc.ali.fa
     """
 
 }
@@ -476,9 +477,21 @@ workflow{
     // Align protein sequences
     align_pep_ch = AlignSequence(ortho_dir.ortho_pep.flatten())
     
-    // remove non confident alignment 
-    align_pep_filt = FilterNonConfidentColumns(align_pep_ch)
+    // combine two chanels to be used later
+    ortho_dir_nuc_id = ortho_dir.ortho_nuc.flatten().map { [it.toString().split("/")[-1].split(".nuc")[0], it]}
+    align_pep_id = align_pep_ch.map { [it.toString().split("/")[-1].split(".pep")[0], it]}
+    pair_pepal_nuc_ch = align_pep_id.combine(ortho_dir_nuc_id, by: 0)
 
+    // convert prot alignemnt in DNA alignemnt
+    nuc_ali_ch = PepAli_2_DNAAli(pair_pepal_nuc_ch)
+
+    nuc_ali_id = ortho_dir.ortho_nuc.flatten().map { [it.toString().split("/")[-1].split(".nuc")[0], it]}
+    pair_pepal_nucal_ch = align_pep_id.combine(nuc_ali_id, by: 0)
+    
+    // remove non confident alignment 
+    align_filt = FilterNonConfidentColumns(pair_pepal_nucal_ch)
+
+/*
     // combine two chanel to be used later
     ortho_dir_nuc_id = ortho_dir.ortho_nuc.flatten().map { [it.toString().split("/")[-1].split(".nuc")[0], it]}
     align_pep_filt_id = align_pep_filt.align_filt.map { [it.toString().split("/")[-1].split(".pep")[0], it]}
@@ -486,9 +499,9 @@ workflow{
 
     //convert prot alignemnt in DNA alignemnt
     nuc_ali_filt = PepAli_2_DNAAli(pair_pepal_nuc_ch)
-    
+*/
     // build tree based on four fold degenrate sites
-    four_four_deg_ch = ExtractFourFoldDegeSites(nuc_ali_filt.flatten())
+    four_four_deg_ch = ExtractFourFoldDegeSites(align_filt.nuc.flatten())
     tree_ch = RaxmlPhylogeny(four_four_deg_ch.flatten())
 
     // test for saturation
@@ -502,7 +515,7 @@ workflow{
         tree_tagged_ch = TagForgroundInTree(tree_ch.flatten())
         // combining 
         tree_tagged_id_ch = tree_tagged_ch.flatten().map { [it.toString().split("/")[-1].split(".nuc")[0], it]}
-        nuc_ali_filt_id_ch = nuc_ali_filt.flatten().map { [it.toString().split("/")[-1].split(".nuc")[0], it]}
+        nuc_ali_filt_id_ch = align_filt.nuc.flatten().map { [it.toString().split("/")[-1].split(".nuc")[0], it]}
         pair_nuc_tree_ch = nuc_ali_filt_id_ch.combine(tree_tagged_id_ch, by: 0)
         //pair_nuc_tree_ch.view()
 
@@ -519,7 +532,7 @@ workflow{
         tree_tagged_ch = TagForgroundInTree(tree_ch.flatten())
         
         // fasta2phylyp
-        nuc_ali_filt_phy_ch = Fasta2Phylip(nuc_ali_filt.flatten())
+        nuc_ali_filt_phy_ch = Fasta2Phylip(align_filt.nuc.flatten())
 
         //combine alignment and tree
         tree_tagged_id_ch = tree_tagged_ch.flatten().map { [it.toString().split("/")[-1].split(".nuc")[0], it]}

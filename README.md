@@ -8,7 +8,7 @@ Required python modules:
  -statsmodels
 
 External tool:
- -MAFFT
+ -MAFFT : 
  -zorro (includes FastTree)
  -pal2nal: https://www.bork.embl.de/pal2nal/#Download
  -raxml-ng: https://github.com/amkozlov/raxml-ng

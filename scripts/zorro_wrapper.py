@@ -92,7 +92,7 @@ def get_confident_regions(scored_pos:list, threshold:float)->list:
 
     return confident
 
-def filter_align(alignment:object, confidence_pos:list)-> object:
+def filter_align_pep(alignment:object, confidence_pos:list)-> object:
     """
     The function keep the high confident column of the alignment in a 
     new alignemnt object
@@ -112,7 +112,30 @@ def filter_align(alignment:object, confidence_pos:list)-> object:
     print(format(filtered_alignement, "fasta"))
     return filtered_alignement
 
-def main(mult_fasta:str, zorro_cmd:str, tree_cmd:str, threshold:float, ouf_file:str)->None:
+
+
+def filter_align_nuc(alignment:object, confidence_pos:list)-> object:
+    """
+    The function keep the high confident column of the alignment in a 
+    new alignemnt object
+
+    :param alignment: alignment object
+    :param confidence_pos: list of confident regions in the fomrat of [[start:end],...] in aminoacid coordinate
+    :return: concatenation of the confident regions in the order in an alignemnt aobject
+    """
+    filtered_alignement =  None
+    for interval in confidence_pos:
+        start = interval[0] * 3
+        end = interval[-1] * 3
+        if filtered_alignement is None:
+           filtered_alignement =  alignment[:, start:end]
+        else:
+            filtered_alignement = filtered_alignement + alignment[:, start:end]
+    print(format(filtered_alignement, "fasta"))
+    return filtered_alignement
+    
+
+def main(mult_pep_fasta:str, mult_nuc_fasta:str, zorro_cmd:str, tree_cmd:str, threshold:float, ouf_file:str)->None:
     """
     This is the main function of the script
 
@@ -124,18 +147,27 @@ def main(mult_fasta:str, zorro_cmd:str, tree_cmd:str, threshold:float, ouf_file:
     :return: nothing
     """
     # run zorro to score alignemnt column confidence
-    scored_pos = run_zorro(mult_fasta, zorro_cmd, tree_cmd)
+    scored_pos = run_zorro(mult_pep_fasta, zorro_cmd, tree_cmd)
     # identify highly confident position based on threshold
     confidence_pos = get_confident_regions(scored_pos, threshold)
     # keep only highly confident regions from alignement
-    alignment =  load_align(mult_fasta)
-    alignment_filtered = filter_align(alignment, confidence_pos)
+    alignment_pep =  load_align(mult_pep_fasta)
+    alignment_pep_filtered = filter_align_pep(alignment_pep, confidence_pos)
+
+    # keep only highly confident regions from alignement
+    alignment_nuc =  load_align(mult_nuc_fasta)
+    alignment_nuc_filtered = filter_align_nuc(alignment_nuc, confidence_pos)
 
     # save the filtered alignement
-    with open(ouf_file, "w") as file_hanlder:
-        file_hanlder.write(format(alignment_filtered, "fasta"))
+    with open(f"{ouf_file}.pep.filt", "w") as file_hanlder:
+        file_hanlder.write(format(alignment_pep_filtered, "fasta"))
+    
+    # save the nucfiltered alignement
+    with open(f"{ouf_file}.nuc.filt", "w") as file_hanlder:
+        file_hanlder.write(format(alignment_nuc_filtered, "fasta"))
+    
     # save the regions files
-    regions_file = f"{ouf_file}.conf_reg"
+    regions_file = f"{ouf_file}.confident_reg"
     with open(regions_file,"w") as file_handler:
         print(confidence_pos)
         for pos in confidence_pos:
@@ -149,11 +181,12 @@ def main(mult_fasta:str, zorro_cmd:str, tree_cmd:str, threshold:float, ouf_file:
 
 
 parser = argparse.ArgumentParser(description='Script formating the data to be handle by the positvie selction pipeline')
-parser.add_argument('--mult',type=str, help='multiple alignment in fasta format')
+parser.add_argument('--mult_pep',type=str, help='multiple alignment in fasta format')
+parser.add_argument('--mult_nuc',type=str, help='multiple alignment in fasta format')
 parser.add_argument('--threshold', type=float, help='threshold used to remove unconfident alignment')
 parser.add_argument('--out', type=str, help='path to the output file')
 parser.add_argument('--zorro', type=str, help='path to zorro')
 parser.add_argument('--tree_cmd', type=str, help='tree_command')
 
 args = parser.parse_args()
-main(args.mult, args.zorro, args.tree_cmd, args.threshold, args.out)
+main(args.mult_pep, args.mult_nuc, args.zorro, args.tree_cmd, args.threshold, args.out)
