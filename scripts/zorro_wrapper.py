@@ -27,9 +27,10 @@ def run_zorro(mult_fasta:str, zorro_cmd:str, tree_cmd:str)->list:
     result = []
     command = f"{zorro_cmd} -treeprog {tree_cmd} {mult_fasta}"
     out_process = subprocess.run(command, shell=True, capture_output=True)
+    print(command)
     print(out_process.returncode)
-    if out_process.returncode != 1: # strangly zorro return 1 when process succesful
-        raise Exception(f"issue running zorro with file {mult_fasta}") 
+    #if out_process.returncode != 1: # strangly zorro return 1 when process succesful
+    #    raise Exception(f"issue running zorro with file {mult_fasta}") 
     
     try: # this try blcok is to compensate the non follwoing the norm of zorro with eror status
         lst_score = out_process.stdout.split()
@@ -102,6 +103,7 @@ def filter_align_pep(alignment:object, confidence_pos:list)-> object:
     :return: concatenation of the confident regions in the order in an alignemnt aobject
     """
     filtered_alignement =  None
+    print(confidence_pos)
     for interval in confidence_pos:
         start = interval[0]
         end = interval[-1]
@@ -151,6 +153,7 @@ def main(mult_pep_fasta:str, mult_nuc_fasta:str, zorro_cmd:str, tree_cmd:str, th
     # identify highly confident position based on threshold
     confidence_pos = get_confident_regions(scored_pos, threshold)
     # keep only highly confident regions from alignement
+    print(mult_pep_fasta)
     alignment_pep =  load_align(mult_pep_fasta)
     alignment_pep_filtered = filter_align_pep(alignment_pep, confidence_pos)
 

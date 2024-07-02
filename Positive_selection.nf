@@ -5,9 +5,11 @@ params.nuc = "$projectDir/data/nuc/"
 params.pep = "$projectDir/data/pep/"
 params.out = "$projectDir/out/"
 params.prank_command = "$projectDir/ext/prank-msa/prank"
-params.mafft_comand = "$projectDir/ext/bin/mafft"
-params.zorro_command = "$projectDir/ext/bin/zorro"
-params.fasttree_command = "$projectDir/ext/bin/FastTree" 
+params.mafft_comand = "$projectDir/ext/bin/mafft.bat"
+params.zorro_command = "$projectDir/ext/zorro-master/bin/zorro"
+params.fasttree_command = "$projectDir/ext/zorro-master/bin/FastTree" 
+//params.zorro_command = "$projectDir/ext/bin/zorro"
+//params.fasttree_command = "$projectDir/ext/bin/FastTree" 
 params.zorro_thr = "5.0"
 params.pal2nal = "$projectDir/ext/bin/pal2nal.pl"
 params.codeml_command = "$projectDir/ext/bin/codeml"
@@ -124,7 +126,7 @@ process FilterNonConfidentColumns{
     publishDir params.out, mode: 'copy'
 
     input:
-        path align_seq
+        val align_seq
 
     output:
         path "*.nuc.filt", emit: nuc
@@ -485,7 +487,7 @@ workflow{
     // convert prot alignemnt in DNA alignemnt
     nuc_ali_ch = PepAli_2_DNAAli(pair_pepal_nuc_ch)
 
-    nuc_ali_id = ortho_dir.ortho_nuc.flatten().map { [it.toString().split("/")[-1].split(".nuc")[0], it]}
+    nuc_ali_id = nuc_ali_ch.flatten().map { [it.toString().split("/")[-1].split(".nuc")[0], it]}
     pair_pepal_nucal_ch = align_pep_id.combine(nuc_ali_id, by: 0)
     
     // remove non confident alignment 

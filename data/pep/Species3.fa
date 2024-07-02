@@ -1,8 +1,8 @@
->ENSAAPP00005000058.1 pep mArvAmp1.1:1:30118:32516:1 gene:ENSAAPG00005000054.1 transcript:ENSAAPT00005000076.1 gene_biotype:protein_coding transcript_biotype:protein_coding
+>ENSAAPT00005000076.1 pep mArvAmp1.1:1:30118:32516:1 gene:ENSAAPG00005000054.1 transcript:ENSAAPT00005000076.1 gene_biotype:protein_coding transcript_biotype:protein_coding
 WVLNATFLLQPSPLTWLLTVFIWVSAQQKNFPFRCLQISS
 
->ENSAAPP00005000166.1 pep mArvAmp1.1:1:131541:168732:1 gene:ENSAAPG00005000156.1 transcript:ENSAAPT00005000190.1 gene_biotype:protein_coding transcript_biotype:protein_coding
+>ENSAAPT00005000190.1 pep mArvAmp1.1:1:131541:168732:1 gene:ENSAAPG00005000156.1 transcript:ENSAAPT00005000190.1 gene_biotype:protein_coding transcript_biotype:protein_coding
 MASWLCNLCFQPPHRKSSKSLTSCGHVYCDSCLRKGKKD
 
->ENSAAPP00005000244.1 pep mArvAmp1.1:1:194257:205512:-1 gene:ENSAAPG00005000228.1 transcript:ENSAAPT00005000282.1 gene_biotype:protein_coding transcript_biotype:protein_coding
+>ENSAAPT00005000282.1 pep mArvAmp1.1:1:194257:205512:-1 gene:ENSAAPG00005000228.1 transcript:ENSAAPT00005000282.1 gene_biotype:protein_coding transcript_biotype:protein_coding
 MTGSPALLLLLLSPLLLGALPSAEAARDDVNPRKESPGPG
