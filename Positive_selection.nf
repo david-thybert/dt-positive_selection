@@ -5,11 +5,11 @@ params.nuc = "$projectDir/data/nuc/"
 params.pep = "$projectDir/data/pep/"
 params.out = "$projectDir/out/"
 params.prank_command = "$projectDir/ext/prank-msa/prank"
-params.mafft_comand = "$projectDir/ext/bin/mafft.bat"
-params.zorro_command = "$projectDir/ext/zorro-master/bin/zorro"
-params.fasttree_command = "$projectDir/ext/zorro-master/bin/FastTree" 
-//params.zorro_command = "$projectDir/ext/bin/zorro"
-//params.fasttree_command = "$projectDir/ext/bin/FastTree" 
+params.mafft_comand = "$projectDir/ext/bin/mafft"
+//params.zorro_command = "$projectDir/ext/zorro-master/bin/zorro"
+//params.fasttree_command = "$projectDir/ext/zorro-master/bin/FastTree" 
+params.zorro_command = "$projectDir/ext/bin/zorro"
+params.fasttree_command = "$projectDir/ext/bin/FastTree" 
 params.zorro_thr = "5.0"
 params.pal2nal = "$projectDir/ext/bin/pal2nal.pl"
 params.codeml_command = "$projectDir/ext/bin/codeml"
@@ -131,7 +131,7 @@ process FilterNonConfidentColumns{
     output:
         path "*.nuc.filt", emit: nuc
         path "*.pep.filt", emit: pep
-        path "*.conf_reg", emit : reg_filt
+        path "*.confident_reg", emit : reg_filt
     
     script:
     """
