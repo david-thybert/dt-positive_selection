@@ -1,6 +1,7 @@
 #!/Users/dthybert/bin//nextflow
 
 params.ortho = "$projectDir/data/orthologues_rod.txt"
+params.batch_size = 10
 params.nuc = "$projectDir/data/nuc/"
 params.pep = "$projectDir/data/pep/"
 params.out = "$projectDir/out/"
@@ -51,6 +52,31 @@ log.info"""\
     prank location: $params.prank_command 
     raxml location: $params.raxml_command
 */
+
+
+process Batch_orthogroup{
+/* This process split the orthogroup file into batches of size $param.batch_size
+
+   input:
+   path ortho : path to the orthology matrix
+
+   output:
+
+   path ortho_batch files of orthologue splited in batches
+*/
+    
+    input:
+        path ortho
+        val batch_size
+
+    output:
+        path "*.obatch" , emit: ortho_batch
+    
+    script:
+    """
+        python $projectDir/scripts/batch_orthogroups.py --ortho $ortho  --size $batch_size --out_prefix ./orthogroups
+    """
+}
 
 process FormatFasta{
 /* This process format fasta files to be compatible with positive selction analysis
@@ -474,7 +500,9 @@ nextflow.enable.dsl=2
 
 workflow{
 
-    ortho_dir = FormatFasta(params.ortho, params.nuc, params.pep)
+    ortho_batch = Batch_orthogroup(params.ortho, params.batch_size)
+    ortho_dir = FormatFasta(ortho_batch.flatten(), params.nuc, params.pep)
+   // ortho_dir = FormatFasta(params.ortho, params.nuc, params.pep)
     
     // Align protein sequences
     align_pep_ch = AlignSequence(ortho_dir.ortho_pep.flatten())

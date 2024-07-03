@@ -19,7 +19,7 @@ def main(ortho_file:str, min_species:int, required_species:str, out_file:str )->
             while i < len(ortho):
                 tab_elem = ortho[i].split(",")
                 if len(tab_elem) == 1:
-                    dico_ortho[ortho[0]][i] = tab_elem[0]
+                    dico_ortho[ortho[0]][i-1] = tab_elem[0]
                 i = i + 1
 
     with open(out_file, 'w') as outfile_handler:
