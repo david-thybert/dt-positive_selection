@@ -1,6 +1,6 @@
 #!/Users/dthybert/bin//nextflow
 
-params.ortho = "$projectDir/data/orthologues.txt"
+params.ortho = "$projectDir/data/orthologues_rod.txt"
 params.nuc = "$projectDir/data/nuc/"
 params.pep = "$projectDir/data/pep/"
 params.out = "$projectDir/out/"
@@ -107,7 +107,7 @@ process AlignSequence{
 
     script:
     """
-     $params.mafft_comand --amino --localpair $ortho_pep > ${ortho_pep}.ali
+     $params.mafft_comand --anysymbol --localpair $ortho_pep > ${ortho_pep}.ali
     """
     //$params.prank_command  -d=$ortho_nuc -o=$ortho_nuc -codon -F
 }

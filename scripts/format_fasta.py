@@ -97,7 +97,7 @@ def createNucFile(orthogroup_path: str, orthogroup: str, nucleotide: str, orthod
     fasta_list = []
     for species, genes in orthodata.items():
         species_sequences = f"{nucleotide}/{species}.fa"
-        print(species_sequences)
+       # print(species_sequences)
         record_dict = SeqIO.to_dict(SeqIO.parse(species_sequences, "fasta"))
         try:
             record = record_dict[genes[0]]
