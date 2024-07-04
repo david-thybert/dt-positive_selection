@@ -11,13 +11,13 @@ def main(ortho_file:str, min_species:int, required_species:str, out_file:str )->
     with open(ortho_file) as file_handler:
         for line in file_handler:
             if "Orthogroup" in line:
-                species = line.split("\t")
+                species = line.replace("\n", "").split("\t")
                 continue
-            ortho = line.split("\t")
+            ortho = line.strip().split("\t")
             i = 1
             dico_ortho[ortho[0]] = [""]*len(species)
             while i < len(ortho):
-                tab_elem = ortho[i].split(",")
+                tab_elem = ortho[i].replace(" ","").split(",")
                 if len(tab_elem) == 1:
                     dico_ortho[ortho[0]][i-1] = tab_elem[0]
                 i = i + 1
@@ -30,7 +30,7 @@ def main(ortho_file:str, min_species:int, required_species:str, out_file:str )->
                 if gene != "":
                     nb = nb + 1
             if nb >= min_species:
-                outfile_handler.write("\t".join(lst_ortho))
+                outfile_handler.write("\t".join(lst_ortho)+"\n")
 
 
 

@@ -150,7 +150,7 @@ process FilterNonConfidentColumns{
   path reg_filt: path to th efile describing the filtered regions
 */
     publishDir params.out, mode: 'copy'
-
+//    errorStrategy { task.exitStatus == 140 ? 'retry' : 'ignore' }
     input:
         val align_seq
 

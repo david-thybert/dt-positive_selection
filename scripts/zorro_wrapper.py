@@ -104,6 +104,8 @@ def filter_align_pep(alignment:object, confidence_pos:list)-> object:
     """
     filtered_alignement =  None
     print(confidence_pos)
+    if confidence_pos == []:
+        return filtered_alignement
     for interval in confidence_pos:
         start = interval[0]
         end = interval[-1]
@@ -126,6 +128,8 @@ def filter_align_nuc(alignment:object, confidence_pos:list)-> object:
     :return: concatenation of the confident regions in the order in an alignemnt aobject
     """
     filtered_alignement =  None
+    if confidence_pos ==[]:
+        return filtered_alignement
     for interval in confidence_pos:
         start = interval[0] * 3
         end = interval[-1] * 3
@@ -152,6 +156,7 @@ def main(mult_pep_fasta:str, mult_nuc_fasta:str, zorro_cmd:str, tree_cmd:str, th
     scored_pos = run_zorro(mult_pep_fasta, zorro_cmd, tree_cmd)
     # identify highly confident position based on threshold
     confidence_pos = get_confident_regions(scored_pos, threshold)
+    print(confidence_pos)
     # keep only highly confident regions from alignement
     print(mult_pep_fasta)
     alignment_pep =  load_align(mult_pep_fasta)
@@ -161,11 +166,11 @@ def main(mult_pep_fasta:str, mult_nuc_fasta:str, zorro_cmd:str, tree_cmd:str, th
     alignment_nuc =  load_align(mult_nuc_fasta)
     alignment_nuc_filtered = filter_align_nuc(alignment_nuc, confidence_pos)
 
-    # save the filtered alignement
+        # save the filtered alignement
     with open(f"{ouf_file}.pep.filt", "w") as file_hanlder:
         file_hanlder.write(format(alignment_pep_filtered, "fasta"))
     
-    # save the nucfiltered alignement
+        # save the nucfiltered alignement
     with open(f"{ouf_file}.nuc.filt", "w") as file_hanlder:
         file_hanlder.write(format(alignment_nuc_filtered, "fasta"))
     

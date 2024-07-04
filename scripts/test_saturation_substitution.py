@@ -129,7 +129,7 @@ def get_over_all_nuc_freq(alignment:object)->tuple:
         column = alignment[:,i:i+1]
         nuc_class = {'A':0, 'C':0,'T':0,'G':0}
         for nuc in column:
-            if nuc.seq == "-":
+            if nuc.seq == "-" or nuc.seq == "N":
                 break
             nuc_class[nuc.seq] += 1
         tag_inf = True

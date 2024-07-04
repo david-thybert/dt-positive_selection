@@ -61,6 +61,10 @@ def _to_alignment_object(matrix: list, ori_align:Alignment) -> Alignment:
     :return: multiple sequence alignment object of four fold degenerated sites.
     """
     sequences = []
+
+    if matrix == []:# if no four fold degene site has been found then returning None
+        return None
+    
     i = 0
     while i  < len(matrix[0]):
         strSeq = ""
@@ -116,8 +120,9 @@ def main(nuc_align: str, outfile: str) -> None:
     """
     alignment = AlignIO.read(open(nuc_align), "fasta")
     four_fold_align = get_4_fold_dege_align(alignment)
-    with open(outfile, "w") as file_hanlder:
-        file_hanlder.write(format(four_fold_align, "fasta"))
+    if not four_fold_align is None:
+        with open(outfile, "w") as file_hanlder:
+            file_hanlder.write(format(four_fold_align, "fasta"))
     
 
 
