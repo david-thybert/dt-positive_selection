@@ -174,10 +174,11 @@ def main(align_file:str, out_file:str)-> None:
     else:
         print("The observed entropy is not significantly different from the expected entropy under full saturation.")
 
+    ortho_id = align_file.split("/")[-1].split(".nuc")[0]
     # save output
     with open(out_file,"w") as file_handler:
-        file_handler.write(f"exp_entrop\tobs_entrop\tt_stat\tpval\n")
-        file_handler.write(f"{sat_expected_entropy}\t{mean_observed_entropy}\t{t_stat}\t{p_val}\n")
+        file_handler.write(f"orthogroup\texp_entrop\tobs_entrop\tt_stat\tpval\n")
+        file_handler.write(f"{ortho_id}\t{sat_expected_entropy}\t{mean_observed_entropy}\t{t_stat}\t{p_val}\n")
 
 
 

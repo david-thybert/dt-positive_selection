@@ -13,22 +13,24 @@ command:
 
 """
 
-def map_inputs(tsvs:list, sat_substs:list)-> dict:
+def map_inputs(pos_sel:dict, sat_substs:dict)-> list:
     """ 
-    This function map together json file and saturation of substitution file
+    This function map together the possel and substitution saturation dictionaries
 
-    :param tsvs: list of tsv fles produced by the script calculate_codeml_pval.py 
-    :param sat_substs: list of saturaiton of substitution files
-    :return: Dictionary that map json file tot he corresponding saturations substtitution file
+    :param pos_sel: dictionary of with data from calculate_codeml_pval.py 
+    :param sat_substs: dicitonary with substritution fo saturation
+    :return: list with all the data together for each orthogroup
     """
-    dico_result = {}
-    for tsv in tsvs:
-        id_tsv = tsv.split("/")[-1].split(".pml")[0]
-        for sta_subst in sat_substs:
-            id_sta_subst = sta_subst.split("/")[-1].split(".nuc")[0]
-            if id_tsv == id_sta_subst:
-                dico_result[id_tsv] = [tsv, sta_subst]
-    return dico_result
+    result =[]
+    for id, val in pos_sel.items():
+        values = val
+        if id in sat_substs:
+            values = values + sat_substs[id ][1:]
+        else:
+            values = values + ["NA","NA","NA","1.0"]
+        result.append(values)
+    return result
+
 
 def fetch_pos_sel_info(tsv_file:str, sat_subst:str)->list:
     """
@@ -65,10 +67,10 @@ def _create_data_frame(pos_sel_branches:list)->object:
     :return: an empy data frame with the column intialised.
     """
 
-    df = pd.DataFrame(pos_sel_branches,  columns =  ["gene_id", "lrt", "pval", "alt_w_0", 
-                                                    "alt_w_1", "alt_w_2a", "alt_w_2b", "null_w_0", 
-                                                    "null_w_1", "null_w_2a", "null_w_2b", "Pval_no_sat", 
-                                                    "obs_entropy", "exp_entropy"])
+    df = pd.DataFrame(pos_sel_branches,  columns =  ["gene_id", "lrt", "pval_possel", "alt_w_0", 
+                                                     "alt_w_1", "alt_w_2a", "alt_w_2b", "null_w_0", 
+                                                     "null_w_1", "null_w_2a", "null_w_2b", "exp_entropy",
+                                                     "obs_entropy", "t_stat", "pval_no_sat"])
     return df
 
 def multitetesting_correction(pos_sel_df:object, method:str="fdr_bh")->dict:
@@ -80,12 +82,47 @@ def multitetesting_correction(pos_sel_df:object, method:str="fdr_bh")->dict:
     :return: dictionary of that store the postive selction data for each branch/species
              including the adjusted pvalues.
     """
-    pval = pos_sel_df["pval"]
+    pval = pos_sel_df["pval_possel"]
     rej, pval_adj, alphasidak, alphacBonf = ssm.multipletests(pval, method=method)
-    pos_sel_df["pval_adj"] = pval_adj
+    pos_sel_df["pval_adj_possel"] = pval_adj
     return pos_sel_df
 
-def main(files:str, file_sat_subst:str, pref_out:str)->None:
+def read_comb_possel(comb_file:str)->dict:
+    """
+    This function read the combined file of possitive selction and create a ortho_id<->data dictionary
+
+    :param com_file: the path tot he file that combine all the positive selction data
+    :return : diction nary where the key is the orthogroup and the values the data associated to 
+              the positive secltion analysis.    
+    """
+    result = {}
+    with open(comb_file) as file_handler:
+        for line in file_handler:
+            if "gene_id" in line:
+                continue
+            tab = line.replace("\n","").split("\t")
+            result[tab[0]] = tab
+    return result
+
+def read_comb_sat(comb_file:str)->dict:
+    """
+    This function read the combined file of combined entropy and create a ortho_id<->data dictionary
+
+    :param com_file: the path tot he file that combine all the saturation analysis data
+    :return : diction nary where the key is the orthogroup and the values the data associated to 
+              the saturation analysis analysis.    
+    """
+    result = {}
+    with open(comb_file) as file_handler:
+        for line in file_handler:
+            if "exp_entrop" in line:
+                continue
+            tab = line.replace("\n","").split("\t")
+            result[tab[0]] = tab
+    return result
+
+
+def main(file_possel:str, file_sat_subst:str, pref_out:str)->None:
     """
     The main function of the script
 
@@ -93,17 +130,20 @@ def main(files:str, file_sat_subst:str, pref_out:str)->None:
     :param file_sat_subst: the list fo file with substitution saturation info
     :param pref_out: prefix used for the file name
     """
-    tsvs = files.split()
-    subst_sats = file_sat_subst.split()
- 
-    dico_input = map_inputs(tsvs, subst_sats)
+    dico_possel = read_comb_possel(file_possel)
+    dico_sat = read_comb_sat(file_sat_subst)
 
-    pos_sel_vals = []
-    for id, files in dico_input.items():
-        tsv = files[0]
-        sat_subst = files[1]
-        val = fetch_pos_sel_info(tsv, sat_subst)
-        pos_sel_vals.append(val)
+    #tsvs = files.split()
+    #subst_sats = file_sat_subst.split()
+ 
+    pos_sel_vals = map_inputs(dico_possel, dico_sat)
+
+    #pos_sel_vals = []
+    #for id, files in dico_input.items():
+    #    tsv = files[0]
+    #    sat_subst = files[1]
+    #   val = fetch_pos_sel_info(tsv, sat_subst)
+    #    pos_sel_vals.append(val)
 
     #converting array to pandas df
     print(pos_sel_vals)
