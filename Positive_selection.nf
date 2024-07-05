@@ -1,6 +1,6 @@
 #!/Users/dthybert/bin//nextflow
 
-params.ortho = "$projectDir/data/orthologues_rod.txt"
+params.ortho = "$projectDir/data/orthologues.txt"
 params.batch_size = 10
 params.nuc = "$projectDir/data/nuc/"
 params.pep = "$projectDir/data/pep/"
@@ -15,7 +15,7 @@ params.zorro_thr = "5.0"
 params.pal2nal = "$projectDir/ext/bin/pal2nal.pl"
 params.codeml_command = "$projectDir/ext/bin/codeml"
 params.raxml_command = "$projectDir/ext/bin/raxml-ng"
-params.fgrd_species = "$projectDir/data/foreground.txt"
+params.fgrd_species = "$projectDir/data/foreground_test.txt"
 params.ancestral = "False"
 params.possel_method = "ABSREL" // ABSREL | PAML_BRST
 if (params.possel_method == "PAML_BRST" )
@@ -482,14 +482,15 @@ with codeml
     publishDir params.out, mode: 'copy'
 
     input:
-        path pos_sel_tsv
-        path sat_subst
+       path pos_sel_tsv
+       path sat_subst
+       //val combined_file
     output:
         path "*.possel", emit: pos_sel
 
     script:
     """
-         python $projectDir/scripts/combine_pos_sell_info_brst.py --files_possel "$pos_sel_tsv" --files_sat_subst "$sat_subst" --prefix_out "PML_BRST"
+         python $projectDir/scripts/combine_pos_sell_info_brst.py --files_possel $pos_sel_tsv --files_sat_subst $sat_subst --prefix_out "PML_BRST"
     """
 }
 
@@ -521,15 +522,6 @@ workflow{
     // remove non confident alignment 
     align_filt = FilterNonConfidentColumns(pair_pepal_nucal_ch)
 
-/*
-    // combine two chanel to be used later
-    ortho_dir_nuc_id = ortho_dir.ortho_nuc.flatten().map { [it.toString().split("/")[-1].split(".nuc")[0], it]}
-    align_pep_filt_id = align_pep_filt.align_filt.map { [it.toString().split("/")[-1].split(".pep")[0], it]}
-    pair_pepal_nuc_ch = align_pep_filt_id.combine(ortho_dir_nuc_id, by: 0)
-
-    //convert prot alignemnt in DNA alignemnt
-    nuc_ali_filt = PepAli_2_DNAAli(pair_pepal_nuc_ch)
-*/
     // build tree based on four fold degenrate sites
     four_four_deg_ch = ExtractFourFoldDegeSites(align_filt.nuc.flatten())
     tree_ch = RaxmlPhylogeny(four_four_deg_ch.flatten())
@@ -577,16 +569,17 @@ workflow{
         alt_ctl_ch = CreateCTLFile_alt(pair_nuc_tree_ch)
         alt_ctd_ch = RunCodeML_alt(alt_ctl_ch)
         
+	//Calculate pvalue
         // map two ctd file to calulate based ont he gene id.
         null_ctd_id_ch = null_ctd_ch.flatten().map { [it.toString().split("/")[-1].split(".null")[0], it]}
         alt_ctd_id_ch = alt_ctd_ch.flatten().map { [it.toString().split("/")[-1].split(".alt")[0], it]}
         pair_null_alt_ctd_ch = alt_ctd_id_ch.combine(null_ctd_id_ch, by: 0)
-
-        // calculate pval and store file
         pml_brst_ch = CalculateCodemlPval(pair_null_alt_ctd_ch)
-
-        // combine all outfile into a possel file
-        pos_sel_comb_ch = CombinePosselInfoPML_BRST(pml_brst_ch.collect(), sat_info_ch.collect())
+	
+	// combine all outfile into a possel file
+	comb_pml_brst_ch = pml_brst_ch.flatten().collectFile(name:"comb_pml.txt")
+	comb_sat_info_ch = sat_info_ch.flatten().collectFile(name:"comb_sat_info.txt")	
+        pos_sel_comb_ch = CombinePosselInfoPML_BRST(comb_pml_brst_ch, comb_sat_info_ch)
     }
 
 
