@@ -87,7 +87,8 @@ def multitetesting_correction(pos_sel_df:object, method:str="fdr_bh")->dict:
              including the adjusted pvalues.
     """
     pval = pos_sel_df["pval_possel"]
-    rej, pval_adj, alphasidak, alphacBonf = ssm.multipletests(pval, method=method)
+    
+    rej, pval_adj, alphasidak, alphacBonf = ssm.multipletests(pd.to_numeric(pval), method=method)
     pos_sel_df["pval_adj_possel"] = pval_adj
     return pos_sel_df
 
