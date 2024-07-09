@@ -100,13 +100,17 @@ def read_comb_possel(comb_file:str)->dict:
     :return : diction nary where the key is the orthogroup and the values the data associated to 
               the positive secltion analysis.    
     """
+    
     result = {}
     with open(comb_file) as file_handler:
-        for line in file_handler:
-            if "gene_id" in line:
-                continue
-            tab = line.replace("\n","").split("\t")
-            result[tab[0]] = tab
+        for line_file in file_handler:
+                file = line_file.replace("[","").replace("]","").replace(",","").replace("\n")
+                with open(file) as file_gene:
+                    for line in file_gene:
+                        if "gene_id" in line:
+                            continue
+                        tab = line.replace("\n","").split("\t")
+                        result[tab[0]] = tab
     return result
 
 def read_comb_sat(comb_file:str)->dict:
@@ -119,11 +123,14 @@ def read_comb_sat(comb_file:str)->dict:
     """
     result = {}
     with open(comb_file) as file_handler:
-        for line in file_handler:
-            if "exp_entrop" in line:
-                continue
-            tab = line.replace("\n","").split("\t")
-            result[tab[0]] = tab
+        for line_file in file_handler:
+                file = line_file.replace("[","").replace("]","").replace(",","").replace("\n")
+                with open(file) as file_gene:
+                    for line in file_gene:
+                        if "exp_entrop" in line:
+                            continue
+                        tab = line.replace("\n","").split("\t")
+                        result[tab[0]] = tab
     return result
 
 
