@@ -94,7 +94,7 @@ process FormatFasta{
    path ortho_nuc: nucleotide fasta file formated per orthogroup
    path ortho_pep: peptide fasta file formated per orthogroup
    */
-    publishDir params.out, mode: 'copy'
+   // publishDir params.out, mode: 'copy'
 
     input:
         path ortho
@@ -123,7 +123,7 @@ process AlignSequence{
   path aligned_pep: Path to multiple peptide sequence alignment of the orthogroup.
 */
 
-    publishDir params.out, mode: 'copy'
+    //publishDir params.out, mode: 'copy'
 
     input:
         path ortho_pep
@@ -149,7 +149,7 @@ process FilterNonConfidentColumns{
   path align_filt: path to the filterted alignment
   path reg_filt: path to th efile describing the filtered regions
 */
-    publishDir params.out, mode: 'copy'
+    //publishDir params.out, mode: 'copy'
 //    errorStrategy { task.exitStatus == 140 ? 'retry' : 'ignore' }
     input:
         val align_seq
@@ -202,7 +202,7 @@ process ExtractFourFoldDegeSites{
   output:
   path four_four_deg: path to the multiple sequence alignment of four fold degenrated sites.
 */
-    publishDir params.out, mode: 'copy'
+    //publishDir params.out, mode: 'copy'
 
     input:
         path align_seq
@@ -226,7 +226,7 @@ process RaxmlPhylogeny{
   output:
   path tree: the path tot he tree file in nwk format.
 */
-    publishDir params.out, mode: 'copy'
+    //publishDir params.out, mode: 'copy'
 
     input:
         path four_fold_sites
@@ -251,7 +251,7 @@ process TagForgroundInTree{
   output:
   path tagged_tree: tree tagged with the forground
 */
-    publishDir params.out, mode: 'copy'
+   // publishDir params.out, mode: 'copy'
 
     input:
         path tree
@@ -274,7 +274,7 @@ process TestSaturation{
    output:
    path saturation_info: path the information reltive to saturation
 */
-    publishDir params.out, mode: 'copy'
+    //publishDir params.out, mode: 'copy'
     input:
         path align_nuc_filt
     output:
@@ -297,7 +297,7 @@ process PositiveSelectionABSREL{
    path pos_sel: path to the json file storing positive selection results.
 */
 
-    publishDir params.out, mode: 'copy'
+    //publishDir params.out, mode: 'copy'
 
     input:
          val pair_nuc_tree_ch
@@ -346,7 +346,7 @@ process CreateCTLFile_null{
    output:
       ctl_files: ctl configuration file for null branch site model 
  */
-    publishDir params.out, mode: 'copy'
+   // publishDir params.out, mode: 'copy'
 
     input:
         val params_ctl
@@ -370,7 +370,7 @@ process CreateCTLFile_alt{
       ctl_files: ctl configuration file for alt branch site model 
 */
 
-    publishDir params.out, mode: 'copy'
+    //publishDir params.out, mode: 'copy'
 
     input:
         val params_ctl
@@ -392,7 +392,7 @@ process RunCodeML_null{
    output:
    path ctd_files: path tot he ctd file correpsonding ot the null hypothesis evaluaiton of the branch site model
 */
-    publishDir params.out, mode: 'copy'
+    //publishDir params.out, mode: 'copy'
     
     input:
         path ctl_file
@@ -415,7 +415,7 @@ process RunCodeML_alt{
    output:
    path ctd_files: path tot he ctd file correpsonding ot the alt hypothesis evaluation of the branch site model
 */
-    publishDir params.out, mode: 'copy'
+    //publishDir params.out, mode: 'copy'
     
     input:
         path ctl_file
@@ -439,7 +439,7 @@ process Fasta2Phylip{
    output:
    path phy_mult: path to the multiple alignment in phylip format
 */
-    publishDir params.out, mode: 'copy'
+    //publishDir params.out, mode: 'copy'
 
     input:
         path fasta_mult
@@ -457,7 +457,7 @@ process CalculateCodemlPval{
    input:
    val pair_alt_null_ctd: a tuple with format [gene_id, alt cdt, null_cdt ]
 */
-    publishDir params.out, mode: 'copy'
+   // publishDir params.out, mode: 'copy'
 
     input:
         val pair_alt_null_ctd
@@ -468,6 +468,33 @@ process CalculateCodemlPval{
         python $projectDir/scripts/calculate_codeml_pval.py --alt_codeml ${pair_alt_null_ctd[1]}  --null_codeml ${pair_alt_null_ctd[2]} --out ${pair_alt_null_ctd[0]}.pml.brst
     """   
 }
+
+process FlushChanelToFile{
+
+	input: 
+	   val files_brst
+	   val files_sat
+
+	output:
+	  path "*.brst.combined", emit: comb_brst 
+	  path "*.sat.combined" , emit: comb_sat
+	
+	script:
+	"""
+	for inElem in ${files_brst}
+	do
+		echo \${inElem} >> path.brst.combined
+	done
+	
+	for inElem in ${files_sat}
+	do
+		echo \${inElem} >> path.sat.combined
+	done		
+	"""
+
+
+}
+
 
 process CombinePosselInfoPML_BRST{
 /* This process combine all the tsv file produced when implementing the branch site model 
@@ -482,8 +509,8 @@ with codeml
     publishDir params.out, mode: 'copy'
 
     input:
-       path pos_sel_tsv
-       path sat_subst
+       val pos_sel_tsv
+       val sat_subst
        //val combined_file
     output:
         path "*.possel", emit: pos_sel
@@ -575,11 +602,11 @@ workflow{
         alt_ctd_id_ch = alt_ctd_ch.flatten().map { [it.toString().split("/")[-1].split(".alt")[0], it]}
         pair_null_alt_ctd_ch = alt_ctd_id_ch.combine(null_ctd_id_ch, by: 0)
         pml_brst_ch = CalculateCodemlPval(pair_null_alt_ctd_ch)
-	
-	// combine all outfile into a possel file
-	comb_pml_brst_ch = pml_brst_ch.flatten().collectFile(name:"comb_pml.txt")
-	comb_sat_info_ch = sat_info_ch.flatten().collectFile(name:"comb_sat_info.txt")	
-        pos_sel_comb_ch = CombinePosselInfoPML_BRST(comb_pml_brst_ch, comb_sat_info_ch)
+
+	//get all path fomr the chanel into a file and compbined all the files	
+	flushed_ch = FlushChanelToFile(pml_brst_ch.flatten().collect(), sat_info_ch.flatten().collect())
+	flushed_ch.comb_brst.view()
+	pos_sel_comb_ch = CombinePosselInfoPML_BRST(flushed_ch.comb_brst, flushed_ch.comb_sat)
     }
 
 
