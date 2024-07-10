@@ -150,7 +150,8 @@ def main(orthologues: str, nucleotide: str, peptides: str, outBase: str) -> None
     """
    
     try :
-        os.mkdir(outBase)       
+        os.mkdir(outBase) 
+        os.mkdir(outBase+"/align")
     except FileExistsError:
         print(f"{outBase} Directory already exists.")
     except OSError as err:

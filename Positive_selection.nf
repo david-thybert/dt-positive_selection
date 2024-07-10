@@ -1,6 +1,6 @@
 #!/Users/dthybert/bin//nextflow
 
-params.ortho = "$projectDir/data/orthologues_rod.txt"
+params.ortho = "$projectDir/data/orthologues_rod_20.txt"
 params.batch_size = 10
 params.nuc = "$projectDir/data/nuc/"
 params.pep = "$projectDir/data/pep/"
@@ -175,7 +175,7 @@ process PepAli_2_DNAAli{
   output:
   path align_nuc : path to the aligned nucleotide sequences
 */
-    publishDir params.out, mode: 'copy'
+    publishDir params.out+"/align", mode: 'copy'
 
     input:
         val pair_pepali_nuc
