@@ -104,7 +104,7 @@ def read_comb_possel(comb_file:str)->dict:
     result = {}
     with open(comb_file) as file_handler:
         for line_file in file_handler:
-                file = line_file.replace("[","").replace("]","").replace(",","").replace("\n")
+                file = line_file.replace("[","").replace("]","").replace(",","").replace("\n", "")
                 with open(file) as file_gene:
                     for line in file_gene:
                         if "gene_id" in line:
@@ -124,7 +124,7 @@ def read_comb_sat(comb_file:str)->dict:
     result = {}
     with open(comb_file) as file_handler:
         for line_file in file_handler:
-                file = line_file.replace("[","").replace("]","").replace(",","").replace("\n")
+                file = line_file.replace("[","").replace("]","").replace(",","").replace("\n", "")
                 with open(file) as file_gene:
                     for line in file_gene:
                         if "exp_entrop" in line:
