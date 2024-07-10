@@ -102,6 +102,18 @@ def multitetesting_correction(pos_sel_branches_df:dict, method:str="fdr_bh")->di
         values_df["pval_adj"] = pval_adj
     return pos_sel_branches_df
 
+
+def get_file_list(file:str)->list:
+    """
+    """
+    result = []
+    with open(file) as file_handler:
+        for line_file in file_handler:
+                file = line_file.replace("[","").replace("]","").replace(",","").replace("\n", "")
+                result.append(file)
+    return result
+
+
 def main(files:str, file_sat_subst:str, pref_out:str)->None:
     """
     The main fucntion of the script
@@ -110,8 +122,8 @@ def main(files:str, file_sat_subst:str, pref_out:str)->None:
     :param file_sat_subst: the list fo file with substitution saturaiton info
     :param pref_out: prefix used for the file name
     """
-    jsons = files.split()
-    subst_sats = file_sat_subst.split()
+    jsons = get_file_list(files) #files.split()
+    subst_sats = get_file_list(file_sat_subst)#.split()
 
     dico_input = map_inputs(jsons, subst_sats)
 
