@@ -33,6 +33,30 @@ def map_inputs(jsons:list, sat_substs:list)-> dict:
                 dico_result[id_json] = [json, sta_subst]
     return dico_result
 
+
+def get_max_rate(rates:list)->list:
+    """
+    """
+    max = 0.0
+    freq = 0.0
+    for rate in rates:
+        if float(rate[0]) > max:
+            max = float(rate[0])
+            freq = float(rate[1])
+    return [max, freq]
+
+def get_pos_diversifying(positions:list)->list:
+    """
+    """
+    posterior_diversifying = positions[1]
+    i = 0
+    result = []
+    for pos in posterior_diversifying:
+        if float(pos) > 0.5:
+            result.append([i, float(pos)])
+    return  result      
+
+
 def fetch_pos_sel_info(gene_id:str, json_file:str, sat_subst:str)->dict:
     """
     Retrieve the positive selction information fomr the json file
@@ -64,11 +88,19 @@ def fetch_pos_sel_info(gene_id:str, json_file:str, sat_subst:str)->dict:
         pval = values['Uncorrected P-value']
         pval_corr = values['Corrected P-value']
         rate_class = values['Rate classes']
+        rate_dist = values['Rate Distributions']
+        max_rate =  get_max_rate(rate_dist)
+        posterior = values['posterior']
+        pos_diversifying = get_pos_diversifying(posterior)
         lrt = values['LRT']
         omega_ratio_base = values['Baseline MG94xREV omega ratio']
         base = values['Baseline MG94xREV']
         if not pval is None:
-            result[species_name] = [gene_id, lrt, pval, pval_corr, rate_class, omega_ratio_base, base, float(lst_val[-1]), float(lst_val[1]), float(lst_val[0])]
+            positions = ""
+            if pos_diversifying != []: 
+                positions_pos_sel = [f"{x[0]}:{x[1]}" for x in pos_diversifying]
+                positions = "|".join(positions_pos_sel)
+            result[species_name] = [gene_id, lrt, pval, pval_corr, rate_class, max_rate[0],max_rate[1], base, positions, float(lst_val[-1]), float(lst_val[2]), float(lst_val[1])]
     return result
 
 def _create_data_frame(pos_sel_branches:dict)->dict:
@@ -82,7 +114,7 @@ def _create_data_frame(pos_sel_branches:dict)->dict:
     result = {}
     for branche, pos_val in pos_sel_branches.items():
         df = pd.DataFrame(pos_val,  columns =  ["gene_id", "lrt", "pval", "pval_corr", 
-                                                "rate_class", "omega_ratio_base", "base", "Pval_no_sat", "obs_entropy", "exp_entropy"])
+                                                "rate_class", "max_omega","freq_site", "base", "position", "Pval_no_sat", "obs_entropy", "exp_entropy" ])
         result[branche] = df
     return result
 
