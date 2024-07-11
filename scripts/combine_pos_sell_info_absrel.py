@@ -54,6 +54,7 @@ def get_pos_diversifying(positions:list)->list:
     for pos in posterior_diversifying:
         if float(pos) > 0.5:
             result.append([i, float(pos)])
+        i = i +1
     return  result      
 
 
@@ -72,7 +73,7 @@ def fetch_pos_sel_info(gene_id:str, json_file:str, sat_subst:str)->dict:
                 continue
             lst_val = line.split()
             break
-
+    print (json_file)
     with open(json_file) as json_handler:
         file_contents = json_handler.read()
         
@@ -86,21 +87,25 @@ def fetch_pos_sel_info(gene_id:str, json_file:str, sat_subst:str)->dict:
             continue
         species_name = values["original name"].split("|")[-1]
         pval = values['Uncorrected P-value']
+        if pval is None:
+            continue
         pval_corr = values['Corrected P-value']
         rate_class = values['Rate classes']
         rate_dist = values['Rate Distributions']
         max_rate =  get_max_rate(rate_dist)
-        posterior = values['posterior']
-        pos_diversifying = get_pos_diversifying(posterior)
+        pos_diversifying = [] 
+        if 'posterior' in values:
+            posterior = values['posterior']
+            pos_diversifying = get_pos_diversifying(posterior)
         lrt = values['LRT']
         omega_ratio_base = values['Baseline MG94xREV omega ratio']
         base = values['Baseline MG94xREV']
-        if not pval is None:
-            positions = ""
-            if pos_diversifying != []: 
-                positions_pos_sel = [f"{x[0]}:{x[1]}" for x in pos_diversifying]
-                positions = "|".join(positions_pos_sel)
-            result[species_name] = [gene_id, lrt, pval, pval_corr, rate_class, max_rate[0],max_rate[1], base, positions, float(lst_val[-1]), float(lst_val[2]), float(lst_val[1])]
+        #if not pval is None:
+        positions = ""
+        if pos_diversifying != []: 
+            positions_pos_sel = [f"{x[0]}:{x[1]}" for x in pos_diversifying]
+            positions = "|".join(positions_pos_sel)
+        result[species_name] = [gene_id, lrt, pval, pval_corr, rate_class, max_rate[0],max_rate[1], base, positions, float(lst_val[-1]), float(lst_val[2]), float(lst_val[1])]
     return result
 
 def _create_data_frame(pos_sel_branches:dict)->dict:
