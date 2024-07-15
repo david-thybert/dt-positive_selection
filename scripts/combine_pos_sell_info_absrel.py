@@ -45,7 +45,7 @@ def get_max_rate(rates:list)->list:
             freq = float(rate[1])
     return [max, freq]
 
-def get_pos_diversifying(positions:list)->list:
+def get_pos_diversifying(positions:list, map_conf_to_all:list)->list:
     """
     """
     posterior_diversifying = positions[1]
@@ -53,12 +53,12 @@ def get_pos_diversifying(positions:list)->list:
     result = []
     for pos in posterior_diversifying:
         if float(pos) > 0.5:
-            result.append([i, float(pos)])
+            orig_pos = map_conf_to_all[i]
+            result.append([orig_pos, float(pos)])
         i = i +1
     return  result      
 
-
-def fetch_pos_sel_info(gene_id:str, json_file:str, sat_subst:str)->dict:
+def fetch_pos_sel_info(gene_id:str, json_file:str, map_conf_to_all:list, sat_subst:str)->dict:
     """
     Retrieve the positive selction information fomr the json file
 
@@ -96,7 +96,7 @@ def fetch_pos_sel_info(gene_id:str, json_file:str, sat_subst:str)->dict:
         pos_diversifying = [] 
         if 'posterior' in values:
             posterior = values['posterior']
-            pos_diversifying = get_pos_diversifying(posterior)
+            pos_diversifying = get_pos_diversifying(posterior, map_conf_to_all)
         lrt = values['LRT']
         omega_ratio_base = values['Baseline MG94xREV omega ratio']
         base = values['Baseline MG94xREV']
@@ -150,8 +150,26 @@ def get_file_list(file:str)->list:
                 result.append(file)
     return result
 
+def map_confident_to_all(confident:str)-> list:
+    """
+    """
+    regions = []
+    with open(confident) as file_handler:
+        for line in file_handler:
+            tab = line.split()
+            regions.append([int(tab[0]), int(tab[-1])])
+    
+    mapping =[]
+    for region in regions:
+        i = region[0]
+        while i < regions[1]:
+            mapping.append(i)
+            i = i + 1
+    return mapping
 
-def main(files:str, file_sat_subst:str, pref_out:str)->None:
+
+
+def main(files:str, file_sat_subst:str, confident_file:str, pref_out:str)->None:
     """
     The main fucntion of the script
 
@@ -163,12 +181,12 @@ def main(files:str, file_sat_subst:str, pref_out:str)->None:
     subst_sats = get_file_list(file_sat_subst)#.split()
 
     dico_input = map_inputs(jsons, subst_sats)
-
+    map_conf_to_all =  map_confident_to_all(confident_file)
     pos_sel_branches = {}
     for id, files in dico_input.items():
         json = files[0]
         sat_subst = files[1]
-        pos_sel = fetch_pos_sel_info(id, json, sat_subst)
+        pos_sel = fetch_pos_sel_info(id, json, map_conf_to_all, sat_subst)
         for (species, val) in pos_sel.items():
             if not species in pos_sel_branches:
                 pos_sel_branches[species] = []
@@ -193,8 +211,9 @@ def main(files:str, file_sat_subst:str, pref_out:str)->None:
 parser = argparse.ArgumentParser(description='Script formating the data to be handle by the positvie selction pipeline')
 parser.add_argument('--files_possel',type=str, help='list of json file to integrate')
 parser.add_argument('--files_sat_subst',type=str, help='list of files for saturation_substitution')
+parser.add_argument('--confident', type=str, help='confident region file. ')
 parser.add_argument('--prefix_out', type=str, help='prefix for outfiles')
 
 args = parser.parse_args()
-main(args.files_possel, args.files_sat_subst, args.prefix_out)
+main(args.files_possel, args.files_sat_subst,args.confident, args.prefix_out)
 

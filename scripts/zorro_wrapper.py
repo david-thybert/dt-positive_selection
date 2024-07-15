@@ -83,7 +83,7 @@ def get_confident_regions(scored_pos:list, threshold:float)->list:
                 start = i
                 state = 0
         i = i + 1
-    
+        
     if state == 0 and start < i and end  == -1:
         confident.append([start, i])
     elif state == 0 and start < i and end  <= i:
