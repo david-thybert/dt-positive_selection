@@ -474,11 +474,13 @@ process FlushChanelToFile{
 	input: 
 	   val files_brst
 	   val files_sat
+       val files_conf
 
 	output:
 	  path "*.brst.combined", emit: comb_brst 
 	  path "*.sat.combined" , emit: comb_sat
-	
+      path "*.conf.combined" , emit: comb_conf
+
 	script:
 	"""
 	for inElem in ${files_brst}
@@ -489,7 +491,12 @@ process FlushChanelToFile{
 	for inElem in ${files_sat}
 	do
 		echo \${inElem} >> path.sat.combined
-	done		
+	done	
+    
+    for inElem in ${files_conf}
+	do
+		echo \${inElem} >> path.conf.combined
+	done	
 	"""
 }
 
@@ -570,7 +577,7 @@ workflow{
         pos_sel_res_ch  = PositiveSelectionABSREL(pair_nuc_tree_ch)
 
         //get all path fomr the chanel into a file and compbined all the files	
-	    flushed_ch = FlushChanelToFile(pos_sel_res_ch.flatten().collect(), sat_info_ch.flatten().collect())
+	    flushed_ch = FlushChanelToFile(pos_sel_res_ch.flatten().collect(), sat_info_ch.flatten().collect(), align_filt.reg_filt.collect())
 	    flushed_ch.comb_brst.view()
 	    
         // combine result and multiple test correciton

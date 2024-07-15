@@ -16,7 +16,7 @@ command:
 """
 
 
-def map_inputs(jsons:list, sat_substs:list)-> dict:
+def map_inputs(jsons:list, confidents:list, sat_substs:list)-> dict:
     """
     This function map together json file and saturation of substitution file
 
@@ -30,7 +30,11 @@ def map_inputs(jsons:list, sat_substs:list)-> dict:
         for sta_subst in sat_substs:
             id_sta_subst = sta_subst.split("/")[-1].split(".nuc")[0]
             if id_json == id_sta_subst:
-                dico_result[id_json] = [json, sta_subst]
+                dico_result[id_json] = [json, sta_subst,""]
+        for conf in confidents:
+            id_conf =  conf.split("/")[-1].split(".confident")[0]
+            if id_json == id_conf:
+                dico_result[id_json][2] = conf
     return dico_result
 
 
@@ -58,7 +62,7 @@ def get_pos_diversifying(positions:list, map_conf_to_all:list)->list:
         i = i +1
     return  result      
 
-def fetch_pos_sel_info(gene_id:str, json_file:str, map_conf_to_all:list, sat_subst:str)->dict:
+def fetch_pos_sel_info(gene_id:str, json_file:str, conf_file:str, sat_subst:str)->dict:
     """
     Retrieve the positive selction information fomr the json file
 
@@ -79,6 +83,8 @@ def fetch_pos_sel_info(gene_id:str, json_file:str, map_conf_to_all:list, sat_sub
         
     parsed_json = json.loads(file_contents)
 
+    map_conf_to_all = map_confident_to_all(conf_file)
+    
     # gee if is contained in the file name
     #gene_id = json_file.split("/")[-1].split(".nuc")[0]
     result = {}
@@ -179,14 +185,16 @@ def main(files:str, file_sat_subst:str, confident_file:str, pref_out:str)->None:
     """
     jsons = get_file_list(files) #files.split()
     subst_sats = get_file_list(file_sat_subst)#.split()
+    confidents = get_file_list(confident_file)
 
-    dico_input = map_inputs(jsons, subst_sats)
-    map_conf_to_all =  map_confident_to_all(confident_file)
+    dico_input = map_inputs(jsons, confidents, subst_sats)
+
     pos_sel_branches = {}
     for id, files in dico_input.items():
         json = files[0]
         sat_subst = files[1]
-        pos_sel = fetch_pos_sel_info(id, json, map_conf_to_all, sat_subst)
+        conf_file = files[2]
+        pos_sel = fetch_pos_sel_info(id, json, conf_file, sat_subst)
         for (species, val) in pos_sel.items():
             if not species in pos_sel_branches:
                 pos_sel_branches[species] = []
