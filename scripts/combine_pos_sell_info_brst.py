@@ -69,8 +69,8 @@ def _create_data_frame(pos_sel_branches:list)->object:
 
     df = pd.DataFrame(pos_sel_branches,  columns =  ["gene_id", "lrt", "pval_possel", "alt_w_0", 
                                                      "alt_w_1", "alt_w_2a", "alt_w_2b", "null_w_0", 
-                                                     "null_w_1", "null_w_2a", "null_w_2b", "exp_entropy",
-                                                     "obs_entropy", "t_stat", "pval_no_sat","position"])
+                                                     "null_w_1", "null_w_2a", "null_w_2b", "position",
+                                                     "exp_entropy","obs_entropy", "t_stat", "pval_no_sat"])
     df.astype({"lrt":float, "pval_possel":float, "alt_w_0":float, 
                 "alt_w_1":float, "alt_w_2a":float, "alt_w_2b":float, "null_w_0":float, 
                 "null_w_1":float, "null_w_2a":float, "null_w_2b":float, "exp_entropy":float,
