@@ -31,36 +31,52 @@ def parse_codeml_output(ctd_file:str)-> dict:
                             "fore_w_0": w for class 0 in foregournd
                             "fore_w_1": w for class 1 in foregournd
                             "fore_w_2a": w for class 2a in foregournd
-                            "fore_w_2b": w for class 2b in foregournd}
+                            "fore_w_2b": w for class 2b in foregournd
+                            "pp_sites" : list of positive selcted "pos:score|pos:score|..."}
     """
     result = {}
     with open(ctd_file) as file_hanlder:
         lines = file_hanlder.readlines()
 
+    state = 0
+    pp_sites = ""
     for line in lines:
-        if "lnL(" in line: # likelihood line
-            np = int(line.split(")")[0].split(":")[-1])
-            result["np"] = np
-            log_lh = float(line.split(":")[-1].strip().split()[0])
-            result["log_lh"] = log_lh
-        if  "background w" in line:
-            back_w_0 = float(line.split()[2])
-            result["back_w_0"] = back_w_0
-            back_w_1 = float(line.split()[3])
-            result["back_w_1"] = back_w_1
-            back_w_2a = float(line.split()[4])
-            result["back_w_2a"] = back_w_2a
-            back_w_2b = float(line.split()[5])
-            result["back_w_2b"] = back_w_2b
-        if  "foreground w " in line:
-            fore_w_0 = float(line.split()[2])
-            result["fore_w_0"] = fore_w_0
-            fore_w_1 = float(line.split()[3])
-            result["fore_w_1"] = fore_w_1
-            fore_w_2a = float(line.split()[4])
-            result["fore_w_2a"] = fore_w_2a
-            fore_w_2b = float(line.split()[5])
-            result["fore_w_2b"] = fore_w_2b
+        if state == 0:
+            if "lnL(" in line: # likelihood line
+                np = int(line.split(")")[0].split(":")[-1])
+                result["np"] = np
+                log_lh = float(line.split(":")[-1].strip().split()[0])
+                result["log_lh"] = log_lh
+            elif  "background w" in line:
+                back_w_0 = float(line.split()[2])
+                result["back_w_0"] = back_w_0
+                back_w_1 = float(line.split()[3])
+                result["back_w_1"] = back_w_1
+                back_w_2a = float(line.split()[4])
+                result["back_w_2a"] = back_w_2a
+                back_w_2b = float(line.split()[5])
+                result["back_w_2b"] = back_w_2b
+            elif  "foreground w " in line:
+                fore_w_0 = float(line.split()[2])
+                result["fore_w_0"] = fore_w_0
+                fore_w_1 = float(line.split()[3])
+                result["fore_w_1"] = fore_w_1
+                fore_w_2a = float(line.split()[4])
+                result["fore_w_2a"] = fore_w_2a
+                fore_w_2b = float(line.split()[5])
+                result["fore_w_2b"] = fore_w_2b
+            elif "Positive sites for foreground lineages Prob(w>1):" in line:
+                state = 1
+        elif state == 1:
+            pos_elem = line.lstrip().rstrip().split()
+            if pos_elem == []:
+                state = 0
+            else:
+                if pp_sites == "":
+                    pp_sites = f"{pos_elem[0]}:{pos_elem[-1]}"
+                else:
+                    pp_sites = f"{pp_sites}|{pos_elem[0]}:{pos_elem[-1]}"
+    result["pp_sites"] = pp_sites
     return result
 
 def main(alt_codeml_file:str, null_codeml_file:str, out_file:str)->None:
@@ -85,9 +101,9 @@ def main(alt_codeml_file:str, null_codeml_file:str, out_file:str)->None:
     gene_id = alt_codeml_file.split("/")[-1].split(".alt")[0]
     
     # save output
-    header = "gene_id\tlrt\tpval\talt_w_0\talt_w_1\talt_w_2a\talt_w_2b\tnull_w_0\tnull_w_1\tnull_w_2a\tnull_w_2b"
+    header = "gene_id\tlrt\tpval\talt_w_0\talt_w_1\talt_w_2a\talt_w_2b\tnull_w_0\tnull_w_1\tnull_w_2a\tnull_w_2b\tpositions"
     line = f"{gene_id}\t{delta_lrt}\t{pval}\t{alt_codeml['fore_w_0']}\t{alt_codeml['fore_w_1']}\t{alt_codeml['fore_w_2a']}\t{alt_codeml['fore_w_2b']}"
-    line = line + f"\t{null_codeml['fore_w_0']}\t{null_codeml['fore_w_1']}\t{null_codeml['fore_w_2a']}\t{null_codeml['fore_w_2b']}"
+    line = line + f"\t{null_codeml['fore_w_0']}\t{null_codeml['fore_w_1']}\t{null_codeml['fore_w_2a']}\t{null_codeml['fore_w_2b']}\t{alt_codeml['pp_sites']}"
 
     with open(out_file, "w") as file_handler:
         file_handler.write(f"{header}\n")
