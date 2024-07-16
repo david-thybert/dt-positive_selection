@@ -13,7 +13,40 @@ command:
 
 """
 
-def map_inputs(pos_sel:dict, sat_substs:dict)-> list:
+
+
+def map_confident_to_all(confident:str)-> list:
+    """
+    """
+    regions = []
+    with open(confident) as file_handler:
+        for line in file_handler:
+            tab = line.split()
+            regions.append([int(tab[0]), int(tab[-1])])
+    
+    mapping =[]
+    for region in regions:
+        i = region[0]
+        while i < region[1]:
+            mapping.append(i)
+            i = i + 1
+    return mapping
+
+def convert_position(position:str, mapping:list)->str:
+    """
+    """
+    if position == "":
+        return ""
+    new_pos = []
+    tab_pos = position.split("|")
+    for elem in tab_pos:
+        tab = elem.split(":")
+        pos = mapping[int(tab[0])]
+        new_pos.append(f"{pos}:{tab[1]}")
+    return "|".join(new_pos)
+
+
+def map_inputs(pos_sel:dict, sat_substs:dict, confident:dict)-> list:
     """ 
     This function map together the possel and substitution saturation dictionaries
 
@@ -21,13 +54,23 @@ def map_inputs(pos_sel:dict, sat_substs:dict)-> list:
     :param sat_substs: dicitonary with substritution fo saturation
     :return: list with all the data together for each orthogroup
     """
+   # id_conf =  conf.split("/")[-1].split(".confident")[0]
     result =[]
     for id, val in pos_sel.items():
         values = val
+        
+        #convert position to original alignment
+        positions = values[-1]
+        map_conf = map_confident_to_all(confident[id])
+        values[-1] = convert_position(positions, map_conf)
+
+        #add subst saturation data 
         if id in sat_substs:
             values = values + sat_substs[id ][1:]
         else:
             values = values + ["NA","NA","NA","1.0"]
+        
+        #append the row tot he matrix
         result.append(values)
     return result
 
@@ -133,8 +176,26 @@ def read_comb_sat(comb_file:str)->dict:
                         result[tab[0]] = tab
     return result
 
+def read_comb_conf(conf_file:str)->dict:
+    """
+    """
+    result = {}
+    with open(conf_file) as file_handler:
+        for line in file_handler:
+            file = line.replace("[","").replace("]","").replace(",","").replace("\n", "")
+            id_conf =  file.split("/")[-1].split(".confident")[0]
+            result[id_conf] = file
+    return result
 
-def main(file_possel:str, file_sat_subst:str, pref_out:str)->None:
+
+
+
+
+def convert_origin_coordinate(df:object)->object:
+    pass
+
+
+def main(file_possel:str, file_sat_subst:str, confident_file:str, pref_out:str)->None:
     """
     The main function of the script
 
@@ -144,25 +205,20 @@ def main(file_possel:str, file_sat_subst:str, pref_out:str)->None:
     """
     dico_possel = read_comb_possel(file_possel)
     dico_sat = read_comb_sat(file_sat_subst)
-
+    dico_conf = read_comb_conf(confident_file)
     #tsvs = files.split()
     #subst_sats = file_sat_subst.split()
  
     pos_sel_vals = map_inputs(dico_possel, dico_sat)
 
-    #pos_sel_vals = []
-    #for id, files in dico_input.items():
-    #    tsv = files[0]
-    #    sat_subst = files[1]
-    #   val = fetch_pos_sel_info(tsv, sat_subst)
-    #    pos_sel_vals.append(val)
-
     #converting array to pandas df
-    print(pos_sel_vals)
     pos_sel_val_df = _create_data_frame(pos_sel_vals)
-    print(pos_sel_val_df)
+
     # mutli testtin correction
     pos_sel_val_mlt = multitetesting_correction(pos_sel_val_df)
+
+    pos_sel_val_mlt_ori= convert_origin_coordinate(pos_sel_val_mlt)
+    
    
     #save the file per branche
     file_name = f"{pref_out}.possel"
@@ -176,8 +232,9 @@ def main(file_possel:str, file_sat_subst:str, pref_out:str)->None:
 parser = argparse.ArgumentParser(description='Script formating the data to be handle by the positvie selction pipeline')
 parser.add_argument('--files_possel',type=str, help='list of tsv file to integrate')
 parser.add_argument('--files_sat_subst',type=str, help='list of files for saturation_substitution')
+parser.add_argument('--confident', type=str, help='confident region file. ')
 parser.add_argument('--prefix_out', type=str, help='prefix for outfiles')
 
 args = parser.parse_args()
-main(args.files_possel, args.files_sat_subst, args.prefix_out)
+main(args.files_possel, args.files_sat_subst, args.confident, args.prefix_out)
 
