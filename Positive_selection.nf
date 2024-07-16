@@ -1,6 +1,6 @@
 #!/Users/dthybert/bin//nextflow
 
-params.ortho = "$projectDir/data/orthologues_rod.txt"
+params.ortho = "$projectDir/data/orthologues_rod_20.txt"
 params.batch_size = 10
 params.nuc = "$projectDir/data/nuc/"
 params.pep = "$projectDir/data/pep/"
@@ -149,7 +149,7 @@ process FilterNonConfidentColumns{
   path align_filt: path to the filterted alignment
   path reg_filt: path to th efile describing the filtered regions
 */
-    //publishDir params.out, mode: 'copy'
+    publishDir params.out, mode: 'copy'
 //    errorStrategy { task.exitStatus == 140 ? 'retry' : 'ignore' }
     input:
         val align_seq
@@ -297,7 +297,7 @@ process PositiveSelectionABSREL{
    path pos_sel: path to the json file storing positive selection results.
 */
 
-    //publishDir params.out, mode: 'copy'
+    publishDir params.out, mode: 'copy'
 
     input:
          val pair_nuc_tree_ch
@@ -328,12 +328,13 @@ process CombinePosselInfoABSREL{
     input:
         path pos_sel_json
         path sat_subst
+	path conf_file
     output:
         path "*.possel", emit: pos_sel
 
     script:
     """
-         python $projectDir/scripts/combine_pos_sell_info_absrel.py --files_possel $pos_sel_json --files_sat_subst $sat_subst --prefix_out aBSREL
+         python $projectDir/scripts/combine_pos_sell_info_absrel.py --files_possel $pos_sel_json --confident $conf_file  --files_sat_subst $sat_subst --prefix_out aBSREL
     """
 }
 
@@ -392,7 +393,7 @@ process RunCodeML_null{
    output:
    path ctd_files: path tot he ctd file correpsonding ot the null hypothesis evaluaiton of the branch site model
 */
-    //publishDir params.out, mode: 'copy'
+    publishDir params.out, mode: 'copy'
     
     input:
         path ctl_file
@@ -415,7 +416,7 @@ process RunCodeML_alt{
    output:
    path ctd_files: path tot he ctd file correpsonding ot the alt hypothesis evaluation of the branch site model
 */
-    //publishDir params.out, mode: 'copy'
+    publishDir params.out, mode: 'copy'
     
     input:
         path ctl_file
@@ -474,12 +475,12 @@ process FlushChanelToFile{
 	input: 
 	   val files_brst
 	   val files_sat
-       val files_conf
+           val files_conf
 
 	output:
 	  path "*.brst.combined", emit: comb_brst 
 	  path "*.sat.combined" , emit: comb_sat
-      path "*.conf.combined" , emit: comb_conf
+          path "*.conf.combined" , emit: comb_conf
 
 	script:
 	"""
@@ -577,11 +578,11 @@ workflow{
         pos_sel_res_ch  = PositiveSelectionABSREL(pair_nuc_tree_ch)
 
         //get all path fomr the chanel into a file and compbined all the files	
-	    flushed_ch = FlushChanelToFile(pos_sel_res_ch.flatten().collect(), sat_info_ch.flatten().collect(), align_filt.reg_filt.collect())
-	    flushed_ch.comb_brst.view()
+	flushed_ch = FlushChanelToFile(pos_sel_res_ch.flatten().collect(), sat_info_ch.flatten().collect(), align_filt.reg_filt.collect())
+	flushed_ch.comb_brst.view()
 	    
         // combine result and multiple test correciton
-        pos_sel_comb_ch = CombinePosselInfoABSREL(flushed_ch.comb_brst, flushed_ch.comb_sat)
+        pos_sel_comb_ch = CombinePosselInfoABSREL(flushed_ch.comb_brst, flushed_ch.comb_sat, flushed_ch.comb_conf)
     }
     else if(params.possel_method == "PAML_BRST" ){
 
@@ -611,11 +612,11 @@ workflow{
         alt_ctd_id_ch = alt_ctd_ch.flatten().map { [it.toString().split("/")[-1].split(".alt")[0], it]}
         pair_null_alt_ctd_ch = alt_ctd_id_ch.combine(null_ctd_id_ch, by: 0)
         pml_brst_ch = CalculateCodemlPval(pair_null_alt_ctd_ch)
-
-	    //get all path fomr the chanel into a file and compbined all the files	
-	    flushed_ch = FlushChanelToFile(pml_brst_ch.flatten().collect(), sat_info_ch.flatten().collect())
-	    flushed_ch.comb_brst.view()
-	    pos_sel_comb_ch = CombinePosselInfoPML_BRST(flushed_ch.comb_brst, flushed_ch.comb_sat)
+	
+	//get all path fomr the chanel into a file and compbined all the files
+	flushed_ch = FlushChanelToFile(pml_brst_ch.flatten().collect(), sat_info_ch.flatten().collect(), align_filt.reg_filt.collect())
+	flushed_ch.comb_brst.view()
+	pos_sel_comb_ch = CombinePosselInfoPML_BRST(flushed_ch.comb_brst, flushed_ch.comb_sat)
     }
 
 

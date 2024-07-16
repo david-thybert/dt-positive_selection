@@ -168,7 +168,7 @@ def map_confident_to_all(confident:str)-> list:
     mapping =[]
     for region in regions:
         i = region[0]
-        while i < regions[1]:
+        while i < region[1]:
             mapping.append(i)
             i = i + 1
     return mapping
@@ -194,6 +194,7 @@ def main(files:str, file_sat_subst:str, confident_file:str, pref_out:str)->None:
         json = files[0]
         sat_subst = files[1]
         conf_file = files[2]
+        print(conf_file)
         pos_sel = fetch_pos_sel_info(id, json, conf_file, sat_subst)
         for (species, val) in pos_sel.items():
             if not species in pos_sel_branches:
