@@ -7,8 +7,8 @@ def main(possel:str, threshold:float, out:str)-> None:
     """
     df = pd.read_csv(possel, index_col=0, sep="\t")
     print(df.head())
-    df['pval_adj'] = df['pval_adj_possel'].astype(float)
-    filteres_Df = df[df["pval_adj_possel"] <= threshold]
+    df['pval_adj'] = df['pval_adj'].astype(float)
+    filteres_Df = df[df["pval_adj"] <= threshold]
     filteres_Df.to_csv(out, sep="\t", index=False)
 
 

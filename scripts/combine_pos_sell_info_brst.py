@@ -129,7 +129,7 @@ def multitetesting_correction(pos_sel_df:object, method:str="fdr_bh")->dict:
     :return: dictionary of that store the postive selction data for each branch/species
              including the adjusted pvalues.
     """
-    pval = pos_sel_df["pval_possel"]
+    pval = pos_sel_df["pval_adj"]
     
     rej, pval_adj, alphasidak, alphacBonf = ssm.multipletests(pd.to_numeric(pval), method=method)
     pos_sel_df["pval_adj_possel"] = pval_adj
@@ -209,7 +209,7 @@ def main(file_possel:str, file_sat_subst:str, confident_file:str, pref_out:str)-
     #tsvs = files.split()
     #subst_sats = file_sat_subst.split()
  
-    pos_sel_vals = map_inputs(dico_possel, dico_sat)
+    pos_sel_vals = map_inputs(dico_possel, dico_sat, dico_conf)
 
     #converting array to pandas df
     pos_sel_val_df = _create_data_frame(pos_sel_vals)
