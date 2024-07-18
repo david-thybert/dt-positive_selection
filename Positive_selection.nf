@@ -1,6 +1,6 @@
 #!/Users/dthybert/bin//nextflow
 
-params.ortho = "$projectDir/data/orthologues_rod_20.txt"
+params.ortho = "$projectDir/data/orthologues_rod.txt"
 params.batch_size = 10
 params.nuc = "$projectDir/data/nuc/"
 params.pep = "$projectDir/data/pep/"
@@ -11,7 +11,7 @@ params.mafft_comand = "$projectDir/ext/bin/mafft"
 //params.fasttree_command = "$projectDir/ext/zorro-master/bin/FastTree" 
 params.zorro_command = "$projectDir/ext/bin/zorro"
 params.fasttree_command = "$projectDir/ext/bin/FastTree" 
-params.zorro_thr = "1.5"
+params.zorro_thr = "5"
 params.pal2nal = "$projectDir/ext/bin/pal2nal.pl"
 params.codeml_command = "$projectDir/ext/bin/codeml"
 params.raxml_command = "$projectDir/ext/bin/raxml-ng"
@@ -94,7 +94,6 @@ process FormatFasta{
    path ortho_nuc: nucleotide fasta file formated per orthogroup
    path ortho_pep: peptide fasta file formated per orthogroup
    */
-   // publishDir params.out, mode: 'copy'
 
     input:
         path ortho
@@ -123,7 +122,7 @@ process AlignSequence{
   path aligned_pep: Path to multiple peptide sequence alignment of the orthogroup.
 */
 
-    //publishDir params.out, mode: 'copy'
+    publishDir params.out+"/align", mode: 'copy'
 
     input:
         path ortho_pep
@@ -149,8 +148,7 @@ process FilterNonConfidentColumns{
   path align_filt: path to the filterted alignment
   path reg_filt: path to th efile describing the filtered regions
 */
-    publishDir params.out, mode: 'copy'
-//    errorStrategy { task.exitStatus == 140 ? 'retry' : 'ignore' }
+    //publishDir params.out, mode: 'copy'
     input:
         val align_seq
 
@@ -175,7 +173,7 @@ process PepAli_2_DNAAli{
   output:
   path align_nuc : path to the aligned nucleotide sequences
 */
-    publishDir params.out+"/align", mode: 'copy'
+    //publishDir params.out+"/align", mode: 'copy'
 
     input:
         val pair_pepali_nuc
@@ -237,7 +235,7 @@ process RaxmlPhylogeny{
     script:
     """
         $params.raxml_command --msa $four_fold_sites --model GTR+G
-    """
+    """ 
 
 }
 
@@ -297,7 +295,7 @@ process PositiveSelectionABSREL{
    path pos_sel: path to the json file storing positive selection results.
 */
 
-    publishDir params.out, mode: 'copy'
+    //publishDir params.out, mode: 'copy'
 
     input:
          val pair_nuc_tree_ch
@@ -393,7 +391,7 @@ process RunCodeML_null{
    output:
    path ctd_files: path tot he ctd file correpsonding ot the null hypothesis evaluaiton of the branch site model
 */
-    publishDir params.out, mode: 'copy'
+    //publishDir params.out, mode: 'copy'
     
     input:
         path ctl_file
@@ -416,7 +414,7 @@ process RunCodeML_alt{
    output:
    path ctd_files: path tot he ctd file correpsonding ot the alt hypothesis evaluation of the branch site model
 */
-    publishDir params.out, mode: 'copy'
+    //publishDir params.out, mode: 'copy'
     
     input:
         path ctl_file
@@ -616,7 +614,7 @@ workflow{
 	    //get all path fomr the chanel into a file and compbined all the files
 	    flushed_ch = FlushChanelToFile(pml_brst_ch.flatten().collect(), sat_info_ch.flatten().collect(), align_filt.reg_filt.collect())
 	    flushed_ch.comb_brst.view()
-	    pos_sel_comb_ch = CombinePosselInfoPML_BRST(flushed_ch.comb_brst, flushed_ch.comb_sat, flushed_ch.files_conf)
+	    pos_sel_comb_ch = CombinePosselInfoPML_BRST(flushed_ch.comb_brst, flushed_ch.comb_sat, flushed_ch.comb_conf)
     }
 
 

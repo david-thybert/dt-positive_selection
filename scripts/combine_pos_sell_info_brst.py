@@ -129,10 +129,10 @@ def multitetesting_correction(pos_sel_df:object, method:str="fdr_bh")->dict:
     :return: dictionary of that store the postive selction data for each branch/species
              including the adjusted pvalues.
     """
-    pval = pos_sel_df["pval_adj"]
+    pval = pos_sel_df["pval_possel"]
     
     rej, pval_adj, alphasidak, alphacBonf = ssm.multipletests(pd.to_numeric(pval), method=method)
-    pos_sel_df["pval_adj_possel"] = pval_adj
+    pos_sel_df["pval_adj"] = pval_adj
     return pos_sel_df
 
 def read_comb_possel(comb_file:str)->dict:
