@@ -181,15 +181,15 @@ def main(mult_pep_fasta: str, mult_nuc_fasta: str, guid_score: str, threshold: f
     alignment_nuc_filtered = filter_align_nuc(alignment_nuc, confidence_pos)
 
     # save the filtered alignment
-    with open(f"{ouf_file}.pep.filt", "w") as file_hanlder:
+    with open(f"{out_file}.pep.filt", "w") as file_hanlder:
         file_hanlder.write(format(alignment_pep_filtered, "fasta"))
 
         # save the nuc filtered alignment
-    with open(f"{ouf_file}.nuc.filt", "w") as file_hanlder:
+    with open(f"{out_file}.nuc.filt", "w") as file_hanlder:
         file_hanlder.write(format(alignment_nuc_filtered, "fasta"))
 
     # save the regions files
-    regions_file = f"{ouf_file}.confident_reg"
+    regions_file = f"{out_file}.confident_reg"
     with open(regions_file, "w") as file_handler:
         print(confidence_pos)
         for pos in confidence_pos:

@@ -166,6 +166,31 @@ process RunGuidance{
     """
 }
 
+process FilterNonConfidentColumnsGuid{
+/*This process filter non confident column using zorro
+
+  input:
+  path align_seq: path to the alignment file
+
+  output:
+  path align_filt: path to the filterted alignment
+  path reg_filt: path to th efile describing the filtered regions
+*/
+    publishDir params.out+"/filtered", mode: 'copy'
+ input:
+        val align_seq
+
+    output:
+        path "*.nuc.filt", emit: nuc
+        path "*.pep.filt", emit: pep
+        path "*.confident_reg", emit : reg_filt
+
+    script:
+    """
+        python $projectDir/scripts/filter_alignment.py --mult_pep ${align_seq[1]} --mult_nuc ${align_seq[2]} --guid_score ${align_seq[3]} --out ${align_seq[0]} --threshold $params.guidance_thr
+    """
+
+}
 process FilterNonConfidentColumns{
 /*This process filter non confident column using zorro
 
@@ -566,7 +591,18 @@ workflow{
     //Running guidance
     guidance_ch = RunGuidance(ortho_dir.ortho_pep.flatten())
 
+    // align nuc using pep alignment
+    ortho_dir_nuc_id = ortho_dir.ortho_nuc.flatten().map { [it.toString().split("/")[-1].split(".nuc")[0], it]}
+    align_pep_id = guidance_ch.aligned_pep.flatten().map { [it.toString().split("/")[-1].split(".pep")[0], it]}
+    pair_pepal_nuc_ch = align_pep_id.combine(ortho_dir_nuc_id, by: 0)
+    nuc_ali_ch = PepAli_2_DNAAli(pair_pepal_nuc_ch)
 
+    // fiter low quality alignment for guidance
+    align_nuc_id = nuc_ali_ch.flatten().map { [it.toString().split("/")[-1].split(".nuc")[0], it]}
+    align_score_id = guidance_ch.align_score.flatten().map { [it.toString().split("/")[-1].split(".ali_score")[0], it]}
+    pair_pepal_nucal_ch = align_pep_id.combine(align_nuc_id, by: 0)
+    tripl_pepal_nuc_score_ch = pair_pepal_nucal_ch.combine(align_score_id, by: 0)
+    align_filt = FilterNonConfidentColumnsGuid(tripl_pepal_nuc_score_ch)
 
 /*
     // Align protein sequences
