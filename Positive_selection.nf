@@ -7,6 +7,7 @@ params.pep = "$projectDir/data/pep/"
 params.out = "$projectDir/out/"
 params.prank_command = "$projectDir/ext/prank-msa/prank"
 params.mafft_comand = "$projectDir/ext/bin/mafft"
+params.guidance_command = "perl $projectDir/ext/guidance-master/www/Guidance/guidance.pl"
 //params.zorro_command = "$projectDir/ext/zorro-master/bin/zorro"
 //params.fasttree_command = "$projectDir/ext/zorro-master/bin/FastTree" 
 params.zorro_command = "$projectDir/ext/bin/zorro"
@@ -137,6 +138,32 @@ process AlignSequence{
     //$params.prank_command  -d=$ortho_nuc -o=$ortho_nuc -codon -F
 }
 
+process RunGuidance{
+/*This process run the multiple sequence alignment of the orthogroup
+  sequence. The alignment is made using a codon aware parameter from pranks
+  to improve the alignment of the protein coding sequence.
+
+  input:
+  path ortho_pep: Path to the fasta file storing all the peptide sequence from a similar orthogroup
+
+  output:
+  path aligned_pep: Path to multiple peptide sequence alignment of the orthogroup.
+*/
+
+    publishDir params.out+"/align", mode: 'copy'
+
+    input:
+        path fasta_ortho
+
+    output:
+        path "*.ali", emit: aligned_pep
+        path "*.ali_score", emit: align_score
+
+    script:
+    """
+     python projectDir/scripts/guidance_wrapper.py --fasta $fasta_ortho --guidance_cmd $params.guidance_command --mafft_cmd $params.mafft_comand --out_dir ./ > ${ortho_pep}.ali
+    """
+}
 
 process FilterNonConfidentColumns{
 /*This process filter non confident column using zorro
@@ -534,8 +561,13 @@ workflow{
 
     ortho_batch = Batch_orthogroup(params.ortho, params.batch_size)
     ortho_dir = FormatFasta(ortho_batch.flatten(), params.nuc, params.pep)
-   // ortho_dir = FormatFasta(params.ortho, params.nuc, params.pep)
-    
+
+    //Running guidance
+    guidance_ch = RunGuidance(ortho_dir.ortho_pep.flatten())
+
+
+
+/*
     // Align protein sequences
     align_pep_ch = AlignSequence(ortho_dir.ortho_pep.flatten())
     
@@ -616,6 +648,6 @@ workflow{
 	    flushed_ch.comb_brst.view()
 	    pos_sel_comb_ch = CombinePosselInfoPML_BRST(flushed_ch.comb_brst, flushed_ch.comb_sat, flushed_ch.comb_conf)
     }
-
+*/
 
 }
