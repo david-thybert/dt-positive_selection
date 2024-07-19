@@ -19,6 +19,7 @@ params.codeml_command = "$projectDir/ext/bin/codeml"
 params.raxml_command = "$projectDir/ext/bin/raxml-ng"
 params.fgrd_species = "$projectDir/data/foreground.txt"
 params.ancestral = "False"
+params.filter = "guid"
 params.possel_method = "ABSREL" // ABSREL | PAML_BRST
 if (params.possel_method == "PAML_BRST" )
 {params.tag_fgrd = "#1"}
@@ -588,41 +589,45 @@ workflow{
     ortho_batch = Batch_orthogroup(params.ortho, params.batch_size)
     ortho_dir = FormatFasta(ortho_batch.flatten(), params.nuc, params.pep)
 
-    //Running guidance
-    guidance_ch = RunGuidance(ortho_dir.ortho_pep.flatten())
+    if ( params.filter == "guid" ) {
+        //Running guidance
+        guidance_ch = RunGuidance(ortho_dir.ortho_pep.flatten())
 
-    // align nuc using pep alignment
-    ortho_dir_nuc_id = ortho_dir.ortho_nuc.flatten().map { [it.toString().split("/")[-1].split(".nuc")[0], it]}
-    align_pep_id = guidance_ch.aligned_pep.flatten().map { [it.toString().split("/")[-1].split(".pep")[0], it]}
-    pair_pepal_nuc_ch = align_pep_id.combine(ortho_dir_nuc_id, by: 0)
-    nuc_ali_ch = PepAli_2_DNAAli(pair_pepal_nuc_ch)
+        // align nuc using pep alignment
+        ortho_dir_nuc_id = ortho_dir.ortho_nuc.flatten().map { [it.toString().split("/")[-1].split(".nuc")[0], it]}
+        align_pep_id = guidance_ch.aligned_pep.flatten().map { [it.toString().split("/")[-1].split(".pep")[0], it]}
+        pair_pepal_nuc_ch = align_pep_id.combine(ortho_dir_nuc_id, by: 0)
+        nuc_ali_ch = PepAli_2_DNAAli(pair_pepal_nuc_ch)
 
-    // fiter low quality alignment for guidance
-    align_nuc_id = nuc_ali_ch.flatten().map { [it.toString().split("/")[-1].split(".nuc")[0], it]}
-    align_score_id = guidance_ch.align_score.flatten().map { [it.toString().split("/")[-1].split(".ali_score")[0], it]}
-    pair_pepal_nucal_ch = align_pep_id.combine(align_nuc_id, by: 0)
-    tripl_pepal_nuc_score_ch = pair_pepal_nucal_ch.combine(align_score_id, by: 0)
-    align_filt = FilterNonConfidentColumnsGuid(tripl_pepal_nuc_score_ch)
+        // fiter low quality alignment for guidance
+        align_nuc_id = nuc_ali_ch.flatten().map { [it.toString().split("/")[-1].split(".nuc")[0], it]}
+        align_score_id = guidance_ch.align_score.flatten().map { [it.toString().split("/")[-1].split(".ali_score")[0], it]}
+        pair_pepal_nucal_ch = align_pep_id.combine(align_nuc_id, by: 0)
+        tripl_pepal_nuc_score_ch = pair_pepal_nucal_ch.combine(align_score_id, by: 0)
+        align_filt = FilterNonConfidentColumnsGuid(tripl_pepal_nuc_score_ch)
+    }
+    else if(params.filter == "zorro" ){
 
-/*
-    // Align protein sequences
-    align_pep_ch = AlignSequence(ortho_dir.ortho_pep.flatten())
+        // Align protein sequences
+        align_pep_ch = AlignSequence(ortho_dir.ortho_pep.flatten())
     
-    // combine two chanels to be used later
-    ortho_dir_nuc_id = ortho_dir.ortho_nuc.flatten().map { [it.toString().split("/")[-1].split(".nuc")[0], it]}
-    align_pep_id = align_pep_ch.map { [it.toString().split("/")[-1].split(".pep")[0], it]}
-    pair_pepal_nuc_ch = align_pep_id.combine(ortho_dir_nuc_id, by: 0)
+        // combine two chanels to be used later
+        ortho_dir_nuc_id = ortho_dir.ortho_nuc.flatten().map { [it.toString().split("/")[-1].split(".nuc")[0], it]}
+        align_pep_id = align_pep_ch.map { [it.toString().split("/")[-1].split(".pep")[0], it]}
+        pair_pepal_nuc_ch = align_pep_id.combine(ortho_dir_nuc_id, by: 0)
 
-    // convert prot alignemnt in DNA alignemnt
-    nuc_ali_ch = PepAli_2_DNAAli(pair_pepal_nuc_ch)
+        // convert prot alignemnt in DNA alignemnt
+        nuc_ali_ch = PepAli_2_DNAAli(pair_pepal_nuc_ch)
 
-    nuc_ali_id = nuc_ali_ch.flatten().map { [it.toString().split("/")[-1].split(".nuc")[0], it]}
-    pair_pepal_nucal_ch = align_pep_id.combine(nuc_ali_id, by: 0)
+        nuc_ali_id = nuc_ali_ch.flatten().map { [it.toString().split("/")[-1].split(".nuc")[0], it]}
+        pair_pepal_nucal_ch = align_pep_id.combine(nuc_ali_id, by: 0)
     
-    // remove non confident alignment 
-    align_filt = FilterNonConfidentColumns(pair_pepal_nucal_ch)
+        // remove non confident alignment
+        align_filt = FilterNonConfidentColumns(pair_pepal_nucal_ch)
 
-    // build tree based on four fold degenrate sites
+    }
+
+    // build tree based on four fold degenerate sites
     four_four_deg_ch = ExtractFourFoldDegeSites(align_filt.nuc.flatten())
     tree_ch = RaxmlPhylogeny(four_four_deg_ch.flatten())
 
@@ -685,6 +690,4 @@ workflow{
 	    flushed_ch.comb_brst.view()
 	    pos_sel_comb_ch = CombinePosselInfoPML_BRST(flushed_ch.comb_brst, flushed_ch.comb_sat, flushed_ch.comb_conf)
     }
-*/
-
 }
