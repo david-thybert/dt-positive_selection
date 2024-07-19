@@ -148,7 +148,7 @@ def load_score(guid_score:str)-> list:
         for line in file_hand:
             if "#" in line:
                 continue
-            tab = line.split("\t")
+            tab = line.split()
             result.append(float(tab[1]))
     return result
 
