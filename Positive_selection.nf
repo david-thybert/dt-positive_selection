@@ -1,6 +1,6 @@
 #!/Users/dthybert/bin//nextflow
 
-params.ortho = "$projectDir/data/orthologues_rod.txt"
+params.ortho = "$projectDir/data/orthologues_rod_20.txt"
 params.batch_size = 10
 params.nuc = "$projectDir/data/nuc/"
 params.pep = "$projectDir/data/pep/"
@@ -13,6 +13,7 @@ params.guidance_command = "perl $projectDir/ext/guidance-master/www/Guidance/gui
 params.zorro_command = "$projectDir/ext/bin/zorro"
 params.fasttree_command = "$projectDir/ext/bin/FastTree" 
 params.zorro_thr = "5"
+params.guidance_thr = "0.90"
 params.pal2nal = "$projectDir/ext/bin/pal2nal.pl"
 params.codeml_command = "$projectDir/ext/bin/codeml"
 params.raxml_command = "$projectDir/ext/bin/raxml-ng"
@@ -161,7 +162,7 @@ process RunGuidance{
 
     script:
     """
-     python projectDir/scripts/guidance_wrapper.py --fasta $fasta_ortho --guidance_cmd $params.guidance_command --mafft_cmd $params.mafft_comand --out_dir ./ > ${ortho_pep}.ali
+     python $projectDir/scripts/guidance_wrapper.py --fasta $fasta_ortho --guidance_cmd "${params.guidance_command}" --mafft_cmd $params.mafft_comand --out_dir ./ 
     """
 }
 

@@ -24,7 +24,8 @@ def run_guidance(fasta_file:str, guidance_cmd:str, mafft_cmd:str, out_dir:str)->
     :return: the list of score corresponding at each column of the alignment
     """
     result = []
-    command = f"{guidance_cmd} --seqFile {fasta_file} --msaProgram MAFFT --seqType aa --mafft {mafft_cmd}--outDir {out_dir}"
+    cwd = os.getcwd()
+    command = f"{guidance_cmd} --seqFile {fasta_file} --msaProgram MAFFT --seqType aa --mafft {mafft_cmd} --outDir {cwd}/{out_dir}"
     out_process = subprocess.run(command, shell=True, capture_output=True)
     print(command)
     print(out_process.returncode)
@@ -69,7 +70,7 @@ def main(fasta:str, guidance_cmd:str, mafft_cmd:str, out_dir:str)->None:
 parser = argparse.ArgumentParser(description='Script formating the data to be handle by the positvie selction pipeline')
 parser.add_argument('--fasta',type=str, help='fasta file of unaligned sequence fomr the orthogroup')
 parser.add_argument('--guidance_cmd',type=str, help='guidance command')
-parser.add_argument('--mafft_cmd', type=float, help='mafft command')
+parser.add_argument('--mafft_cmd', type=str, help='mafft command')
 parser.add_argument('--out_dir', type=str, help='output directory')
 
 args = parser.parse_args()
