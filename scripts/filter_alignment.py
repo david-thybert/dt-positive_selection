@@ -166,16 +166,19 @@ def main(mult_pep_fasta: str, mult_nuc_fasta: str, guid_score: str, threshold: f
     """
     # run zorro to score alignment column confidence
     scored_pos = load_score(guid_score)
-
+    print(scored_pos)
     # identify highly confident position based on threshold
     confidence_pos = get_confident_regions(scored_pos, threshold)
     print(confidence_pos)
-
+    if confidence_pos == []:# if the alignment is too bad we will not do anything
+        return
    # keep only highly confident regions from alignment
     print(mult_pep_fasta)
     alignment_pep = load_align(mult_pep_fasta)
     alignment_pep_filtered = filter_align_pep(alignment_pep, confidence_pos)
-
+    print(confidence_pos)
+    print(alignment_pep)
+    print(alignment_pep_filtered)
     # keep only highly confident regions from alignment
     alignment_nuc = load_align(mult_nuc_fasta)
     alignment_nuc_filtered = filter_align_nuc(alignment_nuc, confidence_pos)
