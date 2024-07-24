@@ -41,6 +41,8 @@ def convert_position(position:str, mapping:list)->str:
     tab_pos = position.split("|")
     for elem in tab_pos:
         tab = elem.split(":")
+        if int(tab[0]) >= len(mapping):
+            continue
         pos = mapping[int(tab[0])]
         new_pos.append(f"{pos}:{tab[1]}")
     return "|".join(new_pos)
