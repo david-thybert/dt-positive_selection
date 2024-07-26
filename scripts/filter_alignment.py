@@ -44,30 +44,24 @@ def get_gapped_regions(align: object, neighbor:int)->list:
     end = 0
     while i < len(result):
         print(start, end)
-        print(align[:,i])
-        if "-" in align[:,i]:
-        #    print("gap")
+        print(align[:, i])
+        if "-" in align[:, i]:
             if state == 0:
-                start = i - neighbor if (i-neighbor) >=0 else 0
                 state = 1
-            if state == 1:
-                end = i
-        else:
-            if state == 1:
-                end = i 
-                j = start
-                while j < end:
+                j = i
+                while j >= 0 or j >= (i - neighbor): # first gap so mask column backward until number neighbor
                     result[j] = 0
-                    j=j+1
+                    j = j - 1
+            if state == 1: # mask column because of gap
+                result[i] = 0
+        else:
+            if state == 1: # end of the gap , fist non gap
                 state = 0
-                start = -1
-                end =0
-        i = i +1
-    if state == 1:
-        j = start
-        while j <= end:
-            result[j] = 0
-            j = j + 1
+                j = i - 1
+                while j < i + neighbor: # end gap so mask column forward until number neighbor
+                    result[j] = 0
+                    j = j + 1
+        i = i + 1
     return result
 
 
