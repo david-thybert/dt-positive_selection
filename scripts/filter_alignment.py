@@ -43,15 +43,20 @@ def get_gapped_regions(align: object, neighbor:int)->list:
     start = -1
     end = 0
     while i < len(result):
+        print(start, end)
+        print(align[:,i])
         if "-" in align[:,i]:
+        #    print("gap")
             if state == 0:
                 start = i - neighbor if (i-neighbor) >=0 else 0
                 state = 1
+            if state == 1:
+                end = i
         else:
             if state == 1:
-                end = i + neighbor if (i + neighbor) > len(result)-1 else len(result)-1
+                end = i 
                 j = start
-                while j<= end:
+                while j < end:
                     result[j] = 0
                     j=j+1
                 state = 0
@@ -193,6 +198,8 @@ def main(mult_pep_fasta: str, mult_nuc_fasta: str, score_file: str, threshold: f
     alignment_pep = load_align(mult_pep_fasta)
     gapped_pos = get_gapped_regions(alignment_pep, neighbors)
     confidence_pos = get_confident_regions(scored_pos, gapped_pos, threshold)
+    print(alignment_pep)
+    print(gapped_pos)
     if confidence_pos == []:
         return
 
@@ -200,7 +207,8 @@ def main(mult_pep_fasta: str, mult_nuc_fasta: str, score_file: str, threshold: f
     alignment_pep_filtered = filter_align_pep(alignment_pep, confidence_pos)
     alignment_nuc = load_align(mult_nuc_fasta)
     alignment_nuc_filtered = filter_align_nuc(alignment_nuc, confidence_pos)
-
+    print(alignment_pep_filtered)
+    print(alignment_nuc_filtered)
     # save the filtered alignments
     with open(f"{out_file}.pep.filt", "w") as file_hanlder:
         file_hanlder.write(format(alignment_pep_filtered, "fasta"))

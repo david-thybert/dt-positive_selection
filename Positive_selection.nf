@@ -1,6 +1,6 @@
 #!/Users/dthybert/bin//nextflow
 
-params.ortho = "$projectDir/data/orthologues_rod.txt"
+params.ortho = "$projectDir/data/orthologues_rod_20.txt"
 params.batch_size = 10
 params.nuc = "$projectDir/data/nuc/"
 params.pep = "$projectDir/data/pep/"
@@ -14,6 +14,7 @@ params.zorro_command = "$projectDir/ext/bin/zorro"
 params.fasttree_command = "$projectDir/ext/bin/FastTree" 
 params.zorro_thr = "5"
 params.guidance_thr = "0.90"
+params.neighbor = 0
 params.pal2nal = "$projectDir/ext/bin/pal2nal.pl"
 params.codeml_command = "$projectDir/ext/bin/codeml"
 params.raxml_command = "$projectDir/ext/bin/raxml-ng"
@@ -188,7 +189,7 @@ process FilterNonConfidentColumnsGuid{
 
     script:
     """
-        python $projectDir/scripts/filter_alignment.py --mult_pep ${align_seq[1]} --mult_nuc ${align_seq[2]} --guid_score ${align_seq[3]} --out ${align_seq[0]} --threshold $params.guidance_thr
+        python $projectDir/scripts/filter_alignment.py --mult_pep ${align_seq[1]} --mult_nuc ${align_seq[2]} --guid_score ${align_seq[3]} --out ${align_seq[0]} --threshold $params.guidance_thr --neighbors $params.neighbor
     """
 
 }
@@ -445,7 +446,7 @@ process RunCodeML_null{
    output:
    path ctd_files: path tot he ctd file correpsonding ot the null hypothesis evaluaiton of the branch site model
 */
-    //publishDir params.out, mode: 'copy'
+    publishDir params.out+"/raw_pos/", mode: 'copy'
     
     input:
         path ctl_file
@@ -468,7 +469,7 @@ process RunCodeML_alt{
    output:
    path ctd_files: path tot he ctd file correpsonding ot the alt hypothesis evaluation of the branch site model
 */
-    //publishDir params.out, mode: 'copy'
+    publishDir params.out+"/raw_pos/", mode: 'copy'
     
     input:
         path ctl_file
