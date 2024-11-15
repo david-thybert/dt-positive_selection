@@ -1,19 +1,20 @@
 #!/Users/dthybert/bin//nextflow
 
-params.ortho = "$projectDir/data/orthologues_rod_20.txt"
+params.ortho = "$projectDir/data/orthologues.txt"
 params.batch_size = 10
 params.nuc = "$projectDir/data/nuc/"
 params.pep = "$projectDir/data/pep/"
 params.out = "$projectDir/out/"
 params.prank_command = "$projectDir/ext/prank-msa/prank"
-params.mafft_comand = "$projectDir/ext/bin/mafft"
-params.guidance_command = "perl $projectDir/ext/guidance-master/www/Guidance/guidance.pl"
+//params.mafft_comand = "$projectDir/ext/bin/mafft"
+params.mafft_comand = "/usr/local/bin/mafft"
+params.guidance_command = "perl $projectDir/ext/guidance.v2.02/www/Guidance/guidance.pl"
 //params.zorro_command = "$projectDir/ext/zorro-master/bin/zorro"
 //params.fasttree_command = "$projectDir/ext/zorro-master/bin/FastTree" 
 params.zorro_command = "$projectDir/ext/bin/zorro"
 params.fasttree_command = "$projectDir/ext/bin/FastTree" 
 params.zorro_thr = "5"
-params.guidance_thr = "0.90"
+params.guidance_thr = "0.0"
 params.neighbor = 0
 params.pal2nal = "$projectDir/ext/bin/pal2nal.pl"
 params.codeml_command = "$projectDir/ext/bin/codeml"
@@ -228,7 +229,7 @@ process PepAli_2_DNAAli{
   output:
   path align_nuc : path to the aligned nucleotide sequences
 */
-    //publishDir params.out+"/align", mode: 'copy'
+    publishDir params.out+"/align", mode: 'copy'
 
     input:
         val pair_pepali_nuc
@@ -255,7 +256,7 @@ process ExtractFourFoldDegeSites{
   output:
   path four_four_deg: path to the multiple sequence alignment of four fold degenrated sites.
 */
-    //publishDir params.out, mode: 'copy'
+    publishDir params.out, mode: 'copy'
 
     input:
         path align_seq
@@ -279,7 +280,7 @@ process RaxmlPhylogeny{
   output:
   path tree: the path tot he tree file in nwk format.
 */
-    //publishDir params.out, mode: 'copy'
+    publishDir params.out, mode: 'copy'
 
     input:
         path four_fold_sites
@@ -304,7 +305,7 @@ process TagForgroundInTree{
   output:
   path tagged_tree: tree tagged with the forground
 */
-   // publishDir params.out, mode: 'copy'
+    publishDir params.out, mode: 'copy'
 
     input:
         path tree
@@ -327,7 +328,7 @@ process TestSaturation{
    output:
    path saturation_info: path the information reltive to saturation
 */
-    //publishDir params.out, mode: 'copy'
+    publishDir params.out, mode: 'copy'
     input:
         path align_nuc_filt
     output:
@@ -350,7 +351,7 @@ process PositiveSelectionABSREL{
    path pos_sel: path to the json file storing positive selection results.
 */
 
-    //publishDir params.out, mode: 'copy'
+    publishDir params.out, mode: 'copy'
 
     input:
          val pair_nuc_tree_ch
@@ -400,7 +401,7 @@ process CreateCTLFile_null{
    output:
       ctl_files: ctl configuration file for null branch site model 
  */
-   // publishDir params.out, mode: 'copy'
+    publishDir params.out, mode: 'copy'
 
     input:
         val params_ctl
@@ -424,7 +425,7 @@ process CreateCTLFile_alt{
       ctl_files: ctl configuration file for alt branch site model 
 */
 
-    //publishDir params.out, mode: 'copy'
+    publishDir params.out, mode: 'copy'
 
     input:
         val params_ctl
@@ -493,7 +494,7 @@ process Fasta2Phylip{
    output:
    path phy_mult: path to the multiple alignment in phylip format
 */
-    //publishDir params.out, mode: 'copy'
+    publishDir params.out, mode: 'copy'
 
     input:
         path fasta_mult
@@ -511,7 +512,7 @@ process CalculateCodemlPval{
    input:
    val pair_alt_null_ctd: a tuple with format [gene_id, alt cdt, null_cdt ]
 */
-   // publishDir params.out, mode: 'copy'
+    publishDir params.out, mode: 'copy'
 
     input:
         val pair_alt_null_ctd
