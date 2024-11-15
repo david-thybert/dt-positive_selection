@@ -11,7 +11,7 @@ def main(dir1:str, dir2:str)->None:
         file.split(".")[0]
         files_1_set.add(file.split(".")[0])
     
-    files_2 = os.listdir(dir1)
+    files_2 = os.listdir(dir2)
     files_2_set = set()
     for file in files_2:
         file.split(".")[0]
