@@ -39,32 +39,32 @@ def get_gapped_regions(align: object, neighbor:int)->list:
     """
     i = 0
     result = [1] * len(align[0])
-    state = 0
+
     start = -1
     end = 0
     while i < len(result):
-        print(start, end)
         print(align[:, i])
         if "-" in align[:, i]:
-            if state == 0:
-                state = 1
-                j = i
-                while j >= 0 or j >= (i - neighbor): # first gap so mask column backward until number neighbor
-                    result[j] = 0
-                    j = j - 1
-            if state == 1: # mask column because of gap
-                result[i] = 0
-        else:
-            if state == 1: # end of the gap , fist non gap
-                state = 0
-                j = i - 1
-                while j < i + neighbor: # end gap so mask column forward until number neighbor
-                    result[j] = 0
-                    j = j + 1
+            result[i] = 0
+        i = i + 1
+    i = 0
+    state = 0
+    while i < len(result):
+        if result[i] == 0:
+            if state==0: # first gap of the section
+                state=1
+                # fill neighbours with 0
+                for j in range(neighbor):
+                    result[(i - 1) - j] = 0 
+        if result[i] == 1:
+            if state==1: # first non gap after gapped reigons
+                state=0
+                for j in range(neighbor-1):
+                    result[i+j] = 0 
+                i = i + neighbor + 1
+                continue
         i = i + 1
     return result
-
-
 
 def get_confident_regions(scored_pos: list, gapped_pos: list, threshold: float) -> list:
     """
