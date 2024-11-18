@@ -39,16 +39,17 @@ def get_gapped_regions(align: object, neighbor:int)->list:
     """
     i = 0
     result = [1] * len(align[0])
-
-    start = -1
-    end = 0
+    
+    # mask gapped regions
     while i < len(result):
         print(align[:, i])
         if "-" in align[:, i]:
             result[i] = 0
         i = i + 1
-    i = 0
+    
+    # mask neighbor to gapped regions
     state = 0
+    i = 0
     while i < len(result):
         if result[i] == 0:
             if state==0: # first gap of the section
