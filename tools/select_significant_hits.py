@@ -8,8 +8,11 @@ def is_sequential_pos(row:object,number:int,windows:int)-> bool:
     """
     """
     pos_string = row["position"]
+    print(row)
+    if pd.isna(row["position"]):
+        print("it is Nan")
+        return False
     positions = pos_string.split("|")
-    last_pos = -1
     nb = 0
     i=0
     while i < len(positions):
@@ -42,7 +45,7 @@ def main(possel:str, threshold:float, nb:int, window:int, out:str)-> None:
     filtered_df = pd.DataFrame()
     for index, row in significant_df.iterrows():
         if not is_sequential_pos(row, nb, window):
-            filtered_df.append(row, ignore_index=True)
+            filtered_df = pd.concat([filtered_df, row])
     filtered_df.to_csv(out, sep="\t", index=False)
 
 
@@ -61,4 +64,4 @@ parser.add_argument('--wind',type=int, default=0.05, help='adj pval threshold to
 parser.add_argument('--out', type=str, help='outfile')
 
 args = parser.parse_args()
-main(args.possel, args.thr, args.out)
+main(args.possel, args.thr,args.nb, args.wind, args.out)
