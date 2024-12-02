@@ -24,6 +24,18 @@ def load_species_to_tag(species_tag:str)->list:
             results.append(line.strip())
     return results
 
+def tag_only_ancestors(lca:Tree, tag:str)->Tree:
+    """ Tag the ancestral node only
+
+    :param lca: last common ancestor node
+    :param tag: tag to be added to the node
+    return : lca node with the tag
+    """
+    if tag not in lca.name:
+        new_name = lca.name + tag
+        lca.add_feature("name", tag)
+    return lca
+
 def tag_ancestors(node:Tree, lca:Tree, tag:str)->Tree:
     """
     Tag all the path from the node to the last common ancestor.
@@ -68,17 +80,22 @@ def tag_tree(tree:Tree, species_to_tag:list, tag_name:str, anc:bool)->Tree:
                 species_with_node.append(species)
                 break
 
-    if anc and len(species_with_node) > 1:# if we want to tag all ancestors until lca we should have more than 1 species
+    if anc == 1 and len(species_with_node) > 1:# if we want to tag all ancestors until lca we should have more than 1 species
         lca_node = leaf_nodes[0].get_common_ancestor(leaf_nodes[1:])
         for node in leaf_nodes:
             tag_ancestors(node, lca_node, tag_name)
-    else:
+    elif anc == 2 and len(species_with_node) == 2:
+        lca_node = leaf_nodes[0].get_common_ancestor(leaf_nodes[1:])
+        tag_only_ancestors(lca_node, tag_name)
+    elif anc == 0:
         for node in leaf_nodes:
             new_name = node.name + tag_name
             node.add_feature("name", new_name)
+    else:
+        raise Exception(f"inconcistancy between parameters anc({anc}) and number of species({len(species_with_node)})\n if anc == 1 thene the numebr of species need to be at least 2 \n if anc == 2 then the number of species need to be only 2")
     return tree
 
-def main(tree_file:str, species_tag:str, tag_name:str, anc:bool, out_file:str)->None:
+def main(tree_file:str, species_tag:str, tag_name:str, anc:int, out_file:str)->None:
     """
     Main fuunction of the script
 
@@ -104,7 +121,7 @@ parser.add_argument('--tree',type=str, help='nwk file describing the phylogeny')
 parser.add_argument('--spe_tag', type=str, help='file that contains the list of species to tag in the tree')
 parser.add_argument('--out', type=str, help='path to the tagged tree')
 parser.add_argument('--tag_name', type=str, help='name of the tag for the forgrand analysis')
-parser.add_argument('--ancestral', type=bool, default=False, help='tag defining if common ancestral node will be tagged as well (work for more than two species taged)')
+parser.add_argument('--ancestral', type=int, default=False, help='tag defining if and how cancestral nod will be taged (0: no ancestor tagged, 1: leafs and ancestor, 2: only ancestor. the tag 2 need to ahve only two species defined in the config file)')
 
 args = parser.parse_args()
 main(args.tree, args.spe_tag, args.tag_name, args.ancestral, args.out)
