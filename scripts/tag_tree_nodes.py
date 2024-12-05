@@ -74,17 +74,19 @@ def tag_tree(tree:Tree, species_to_tag:list, tag_name:str, anc:bool)->Tree:
     leaf_nodes = []
     species_with_node = []
     for species in species_to_tag:
+        print(species)
         for leaf in tree:
             if species == leaf.name.split("|")[-1]:
+                print(leaf.name)
                 leaf_nodes.append(leaf)
                 species_with_node.append(species)
                 break
-
-    if anc == 1 and len(species_with_node) > 1:# if we want to tag all ancestors until lca we should have more than 1 species
+    print(leaf_nodes[1:])
+    if anc == 1 and len(species_to_tag) > 1:# if we want to tag all ancestors until lca we should have more than 1 species
         lca_node = leaf_nodes[0].get_common_ancestor(leaf_nodes[1:])
         for node in leaf_nodes:
             tag_ancestors(node, lca_node, tag_name)
-    elif anc == 2 and len(species_with_node) == 2:
+    elif anc == 2 and len(species_to_tag) == 2:
         lca_node = leaf_nodes[0].get_common_ancestor(leaf_nodes[1:])
         tag_only_ancestors(lca_node, tag_name)
     elif anc == 0:
