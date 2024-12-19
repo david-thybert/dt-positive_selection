@@ -24,7 +24,7 @@ def load_species_to_tag(species_tag:str)->list:
             results.append(line.strip())
     return results
 
-def tag_only_ancestors(lca:Tree, tag:str)->Tree:
+def tag_only_ancestors(lca:Tree, name:str, tag:str)->Tree:
     """ Tag the ancestral node only
 
     :param lca: last common ancestor node
@@ -32,8 +32,8 @@ def tag_only_ancestors(lca:Tree, tag:str)->Tree:
     return : lca node with the tag
     """
     if tag not in lca.name:
-        new_name = lca.name + tag
-        lca.add_feature("name", tag)
+        new_name = name + tag
+        lca.add_feature("name", new_name)
     return lca
 
 def tag_ancestors(node:Tree, lca:Tree, tag:str)->Tree:
@@ -85,8 +85,12 @@ def tag_tree(tree:Tree, species_to_tag:list, tag_name:str, anc:bool)->Tree:
         for node in leaf_nodes:
             tag_ancestors(node, lca_node, tag_name)
     elif anc == 2 and len(species_with_node) == 2:
+        name_anc = "anc_"
+        for spe in species_with_node:
+            spe_tab = spe.split("_")
+            name_anc = name_anc + f"{spe_tab[0][0:3]}{spe_tab[-1][0:3]}"
         lca_node = leaf_nodes[0].get_common_ancestor(leaf_nodes[1:])
-        tag_only_ancestors(lca_node, tag_name)
+        tag_only_ancestors(lca_node, name_anc, tag_name)
     elif anc == 0:
         for node in leaf_nodes:
             new_name = node.name + tag_name
